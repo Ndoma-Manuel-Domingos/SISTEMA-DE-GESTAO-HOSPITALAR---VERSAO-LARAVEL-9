@@ -1,0 +1,52 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+class CreateOdontogramaRegistrosTable extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('odontograma_registros', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('consulta_odonto_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('dente_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->enum('face', [
+                'O',
+                'V',
+                'L',
+                'M',
+                'D'
+            ]);
+
+            $table->foreignId('estado_dente_id')
+                ->constrained();
+
+            $table->text('observacao')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('odontograma_registros');
+    }
+}
