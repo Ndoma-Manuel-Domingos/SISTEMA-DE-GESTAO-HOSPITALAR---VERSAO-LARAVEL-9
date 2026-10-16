@@ -21,6 +21,7 @@ class ResultadoExame extends Model
      */
     protected $fillable = [
         'exame_id',
+        'medico_id',
         'status',
         'referencia',
         'observacoes_resultado',

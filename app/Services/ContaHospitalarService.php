@@ -7,6 +7,8 @@ use App\Models\ContaHospitalar;
 use App\Models\ContaHospitalarItem;
 use App\Models\ContaHospitalarMovimento;
 use App\Models\Fornecedore;
+use App\Models\Medico;
+use App\Models\MedicoComissao;
 use App\Models\Produto;
 use App\Models\SeguradoraPlanoCobertura;
 use App\Models\SeguradoraPlanoBeneficiador;
@@ -82,14 +84,42 @@ class ContaHospitalarService
         }
 
         $quantidade = (int) $request->quantidade;
+        
+        $servico = Produto::findOrFail($request->produto_id);
+        
+        $subtotal = ($request->quantidade * $request->preco_unitario);
 
         if ($quantidade <= 0) {
             throw new \Exception('Quantidade inválida.');
         }
 
-        $subtotal = ($request->quantidade * $request->preco_unitario);
+        if($conta->atendimento->profissional_id && $conta->atendimento->profissional_id != NULL && $conta->atendimento->profissional_id != "") {
 
-        $servico = Produto::findOrFail($request->produto_id);
+            $medico = Medico::findOrFail($conta->atendimento->profissional_id);
+
+            $valor_comissao_medico = 0;
+
+            if($medico->tipo_comissao == 'percentagem') {
+                $valor_comissao_medico = $subtotal * ($medico->valor_comissao / 100) ;
+            }else {
+                $valor_comissao_medico = $medico->valor_comissao;
+            }
+
+            MedicoComissao::create([
+                'pago_em' => NULL,
+                'status' => false,
+                'valor' => $valor_comissao_medico,
+                'servico_id' => $servico->id,
+                'paciente_id' => $conta->atendimento->cliente_id,
+                'medico_id' => $medico->id,
+                "user_id" => Auth::id(),
+                "entidade_id" => $entidade->empresa->id,
+            ]);
+            
+            $medico->saldo += $valor_comissao_medico;
+            $medico->update();
+
+        }
 
         $beneficiario = SeguradoraPlanoBeneficiador::with(['plano'])->where('beneficiario_id', $conta->paciente_id)
             ->whereDate('data_fim', '>=', date("Y-m-d"))
@@ -211,8 +241,13 @@ class ContaHospitalarService
             $agente->update();
         }
 
-        $item->delete();
+        // if ($atendimento && $atendimento->profissional_id != null) {
+        //     $medico = Medico::findOrFail($atendimento->profissional_id);
+        //     $medico->saldo -= $item->comissao_acumulada;
+        //     $medico->update();
+        // }
 
+        $item->delete();
 
         $this->recalcularTotais($conta);
 

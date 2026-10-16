@@ -26,6 +26,56 @@
     <div class="content">
         <div class="container-fluid">
 
+            {{-- <div class="row">
+                <div class="col-12 col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="GET" action="{{ route('solicitacoes-medicas.index') }}" class="row">
+                                <div class="col-12 col-md-2">
+                                    <label for="data_inicio">Data inicial</label>
+                                    <input type="date" name="data_inicio" id="data_inicio" class="form-control" value="{{ request('data_inicio') }}">
+                                </div>
+
+                                <div class="col-12 col-md-2">
+                                    <label for="data_fim">Data final</label>
+                                    <input type="date" name="data_fim" id="data_fim" class="form-control" value="{{ request('data_fim') }}">
+                                </div>
+
+                                <div class="col-12 col-md-2">
+                                    <label for="paciente">Nome do paciente</label>
+                                    <input type="text" name="paciente" id="paciente" class="form-control" placeholder="Nome do paciente" value="{{ request('paciente') }}">
+                                </div>
+
+                                <div class="col-12 col-md-2">
+                                    <label for="solicitacao">N.º da solicitação</label>
+                                    <input type="text" name="solicitacao" id="solicitacao" class="form-control" placeholder="Número da solicitação" value="{{ request('solicitacao') }}">
+                                </div>
+
+                                <div class="col-12 col-md-2">
+                                    <label for="status">Estado</label>
+                                    <select name="status" id="status" class="form-control">
+                                        <option value="">Todos os estados</option>
+                                        <option value="pendente" {{ request('status') == 'pendente' ? 'selected' : '' }}>Pendente</option>
+                                        <option value="executado" {{ request('status') == 'executado' ? 'selected' : '' }}>Executado</option>
+                                        <option value="agendado" {{ request('status') == 'agendado' ? 'selected' : '' }}>Agendado</option>
+                                        <option value="cancelado" {{ request('status') == 'cancelado' ? 'selected' : '' }}>Cancelado</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-12 col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary mr-2">
+                                        <i class="fas fa-search"></i> Pesquisar
+                                    </button>
+                                    <a href="{{ route('solicitacoes-medicas.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-eraser"></i> Limpar
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div> --}}
+
             <!-- /.row -->
             <div class="row">
                 <div class="col-12 col-md-12">
@@ -70,6 +120,7 @@
                                         <td>{{ $item->prioridade->nome ?? "N/A" }}</td>
                                         <td>{{ $item->created_at }}</td>
                                         <td class="text-right">
+                                            <a class="btn btn-light-dark" href="{{ route('consultas-imprimir-individual', $item->id) }}"> <i class="fas fa-print"></i> Reimprimir</a>
                                             @if ($item->status == 'pendente')
                                             <button class="btn btn-light-primary" type="button" onclick="abrirPaciente({{$item}})"> <i class="fas fa-info"></i> Mais detalhe</button>
                                             @endif

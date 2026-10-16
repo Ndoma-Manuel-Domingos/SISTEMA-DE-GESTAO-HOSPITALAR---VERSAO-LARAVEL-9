@@ -7,6 +7,9 @@
             <th colspan="2" style="text-transform: uppercase"> {{ $titulo }}</th>
         </tr>
         <tr>
+            <th colspan="2" style="text-transform: uppercase">NOME: {{ $pagamento->agente->nome ?? 'N/A' }}</th>
+        </tr>
+        <tr>
             <th style="text-transform: uppercase">REFERÊNCIA: {{ $pagamento->numero }}</th>
             <th style="text-transform: uppercase;text-align: right">DATA: {{ $pagamento->created_at?->format('d/m/Y \à\s H:i:s') }}</th>
         </tr>

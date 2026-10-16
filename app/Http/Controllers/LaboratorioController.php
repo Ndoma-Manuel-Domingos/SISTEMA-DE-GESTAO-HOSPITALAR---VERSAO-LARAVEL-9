@@ -34,9 +34,16 @@ class LaboratorioController extends Controller
         //
         $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
 
-        $exames = Exame::with(["consulta", "prioridade", "solicitante_paciente", "solicitante_medico", "profissional", "paciente", "user", "items", "profissional_saude", "solicitante_medico", "entidade"])->where([
-            ["entidade_id", "=", $entidade->empresa->id],
-        ])->orderBy("created_at", "desc")->get();
+        $query = Exame::with(["consulta", "prioridade", "solicitante_paciente", "solicitante_medico", "profissional", "paciente", "user", "items", "profissional_saude", "solicitante_medico", "entidade"])->where([
+            ["entidade_id", $entidade->empresa->id],
+        ]);
+
+        $totalAtendidosHoje = (clone $query)->whereIn('status', ['CONCLUIDO'])->whereDate('created_at', date('Y-m-d'))->count();
+        $totalAtrasadoHoje = (clone $query)->whereIn('status', ['ATRASADA'])->whereDate('data_exame', date('Y-m-d'))->count();
+
+        $resultados = ResultadoExame::where("entidade_id", $entidade->empresa->id)->count();
+
+        $exames = $query->orderBy("created_at", "desc")->get();
 
         $tipo_atentimento = TipoAtendimento::whereIn("sigla", ["Exames"])
             ->where("entidade_id", $entidade->empresa->id)
@@ -44,7 +51,7 @@ class LaboratorioController extends Controller
 
         $atendimentos = Atendimento::whereIn("tipo_atendimento_id", $tipo_atentimento)
             ->where("entidade_id", $entidade->empresa->id)
-            ->whereDate("data_at", date("Y-m-d"))
+            //->whereDate("data_at", date("Y-m-d"))
             ->whereIn("status", ["em atendimento"])
             ->get();
 
@@ -57,6 +64,10 @@ class LaboratorioController extends Controller
             "exames" => $exames,
             "empresa" => $empresa,
             "atendimentos" => $atendimentos,
+            "totalAguardando" => count($atendimentos),
+            "totalAtendidosHoje" => $totalAtendidosHoje,
+            "totalAtrasadoHoje" => $totalAtrasadoHoje,
+            "resultados" => $resultados,
             "empresa_logada" => User::with(["empresa.empresa_modulos", "empresa.tipo_entidade"])->findOrFail(Auth::user()->id),
         ];
 
@@ -153,7 +164,8 @@ class LaboratorioController extends Controller
                 $total_atendimentos = $total_atendimentos  + 1;
 
                 $atendimento = Atendimento::findOrFail($request->origem_id);
-                $atendimento->status = "aguardando";
+                // $atendimento->status = "aguardando";
+                $atendimento->status = "atendido";
                 $atendimento->numero = "{$tipo_atendimento->sigla} - {$total_atendimentos}";
                 $atendimento->tipo_atendimento_id = $tipo_atendimento ? $tipo_atendimento->id : NULL;
                 $atendimento->update();
@@ -166,6 +178,7 @@ class LaboratorioController extends Controller
                     if ($resultado_exame) {
                         $resultado = ResultadoExame::findOrFail($resultado_exame->id);
                         $resultado->observacoes_resultado = $request->observacao;
+                        $resultado->medico_id = $request->medico_id;
                         $resultado->status = 'concluido';
                         $resultado->data_realizacao = date("Y-m-d");
                         $resultado->hora_realizacao = date("h:i:s");
@@ -197,7 +210,7 @@ class LaboratorioController extends Controller
 
         $atendimento = Atendimento::with(['paciente', 'exames.items.produto'])
             ->where('tipo_atendimento_id', $tipo_atendimento->id)
-            ->whereDate("data_at", date("Y-m-d"))
+            //->whereDate("data_at", date("Y-m-d"))
             ->whereIn("status", ["em atendimento"])
             ->where('entidade_id', $entidade->empresa->id)
             ->first();

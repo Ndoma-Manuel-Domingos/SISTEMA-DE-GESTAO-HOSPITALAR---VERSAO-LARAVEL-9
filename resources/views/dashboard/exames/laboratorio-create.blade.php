@@ -12,7 +12,7 @@
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('consultorio.index') }}">{{ __('messages.voltar') }}</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('laboratorio.index') }}">{{ __('messages.voltar') }}</a></li>
                         <li class="breadcrumb-item active">Consultório</li>
                     </ol>
                 </div><!-- /.col -->
@@ -109,11 +109,17 @@
 @section('scripts')
 <script>
     let tipos = @json($tipos_atendimentos);
+    let medicos = @json($medicos);
 
     let optionsDestinos = '';
+    let medicosDestinos = '';
 
     tipos.forEach(i => {
         optionsDestinos += `<option value="${i.id}">${i.nome}</option>`;
+    });
+
+    medicos.forEach(i => {
+        medicosDestinos += `<option value="${i.id}">${i.funcionario.nome}</option>`;
     });
 
 
@@ -139,6 +145,13 @@
                     , html: `
                         <div class="row">
                             <div class="col-12 col-md-12 mb-3  text-left">
+                                <label class="form-label">Médico Responsável (Destino)</label>
+                                <select id="swal_medico_id" class="form-control" >
+                                    <option value="">Selecione</option>
+                                    ${medicosDestinos}
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-12 mb-3  text-left">
                                 <label class="form-label">Destino do Paciente</label>
                                 <select id="swal_status" class="form-control" >
                                     <option value="">Selecione</option>
@@ -158,14 +171,20 @@
                     , focusConfirm: false
                     , preConfirm: () => {
                         let status = $('#swal_status').val();
+                        let medico_id = $('#swal_medico_id').val();
                         let observacao = $('#swal_observacao').val();
                         if (!status) {
                             Swal.showValidationMessage('Selecione uma opção');
                             return false;
                         }
+                        if (!medico_id) {
+                            Swal.showValidationMessage('Selecione uma opção');
+                            return false;
+                        }
                         return {
-                            status: status
-                            , observacao: observacao
+                            status: status, 
+                            medico_id: medico_id, 
+                            observacao: observacao
                         };
                     }
                 }).then((dados) => {
@@ -176,6 +195,7 @@
                             , data: {
                                 _token: '{{ csrf_token() }}'
                                 , status: dados.value.status
+                                , medico_id: dados.value.medico_id
                                 , origem_id: origem
                                 , observacao: dados.value.observacao
                             }

@@ -26,11 +26,38 @@
     <div class="content">
         <div class="container-fluid">
 
+            {{-- Indicadores da triagem --}}
+            <div class="row">
+                <div class="col-12 col-md-6">
+                    <div class="small-box bg-light-warning">
+                        <div class="inner">
+                            <h3>{{ $totalAguardando ?? 0 }}</h3>
+                            <p>Aguardando triagem</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <div class="small-box bg-light-success">
+                        <div class="inner">
+                            <h3>{{ $totalAtendidosHoje ?? 0 }}</h3>
+                            <p>Triagens concluídas hoje</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="row">
                 <div class="col-12 col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h1 class="h5">Triagens pendentes</h1>
+                            <h1 class="h5">Triagens pendentes(Aguardando). <small>Clica em opções para poder atender esse paciente</small></h1>
                         </div>
 
                         @if ($atendimentos)
@@ -112,9 +139,7 @@
                 <div class="col-12 col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            {{-- <div class="card-tools">
-                                <a class="btn btn-light-danger" target="_blank" href="#"><i class="fas fa-file-pdf"></i> PDF</a>
-                            </div> --}}
+                            <h1 class="h5">Triagens concluídas</h1>
                         </div>
 
                         @if ($triagens)
@@ -129,10 +154,6 @@
                                         <th>{{ __('messages.estados') }}</th>
                                         <th>Peso</th>
                                         <th>Temperatura</th>
-                                        <th>Altura</th>
-                                        <th>Pressão</th>
-                                        <th>Frequencia Respiratória</th>
-                                        <th>Frenquencia Cardiaca</th>
                                         <th>IMC</th>
                                         <th class="text-right">{{ __('messages.accoes') }} </th>
                                     </tr>
@@ -141,14 +162,15 @@
                                     @foreach ($triagens as $item)
                                     <tr>
                                         <td>
-                                            @if ( $item->prioridade->cor === "#FF4C4C") 🔴 @endif
-                                            @if ( $item->prioridade->cor === "#FF9900") 🟠 @endif
-                                            @if ( $item->prioridade->cor === "#FFCC00") 🟡 @endif
-                                            @if ( $item->prioridade->cor === "#66CC66") 🟢 @endif
-                                            @if ( $item->prioridade->cor === "#4DA6FF") 🔵 @endif
-                                            @if ( $item->prioridade->cor === "#CCCCCC") ⚪ @endif
-                                            @if ( $item->prioridade->cor === "#800080") 🟣 @endif
-                                            {{ $item->id ?? "" }}
+                                            <a href="{{ route('triagens.show', $item->id) }}">@if ( $item->prioridade->cor === "#FF4C4C") 🔴 @endif
+                                                @if ( $item->prioridade->cor === "#FF9900") 🟠 @endif
+                                                @if ( $item->prioridade->cor === "#FFCC00") 🟡 @endif
+                                                @if ( $item->prioridade->cor === "#66CC66") 🟢 @endif
+                                                @if ( $item->prioridade->cor === "#4DA6FF") 🔵 @endif
+                                                @if ( $item->prioridade->cor === "#CCCCCC") ⚪ @endif
+                                                @if ( $item->prioridade->cor === "#800080") 🟣 @endif
+                                                {{ $item->id ?? "" }}
+                                            </a>
                                         </td>
                                         <td>{{ $item->paciente->nome ?? "N/A" }}</td>
                                         <td>asdas</td>
@@ -166,10 +188,6 @@
                                         @endif
                                         <td>{{ $item->peso }}</td>
                                         <td>{{ $item->temperatura }}</td>
-                                        <td>{{ $item->altura }}</td>
-                                        <td>{{ $item->pressao }}</td>
-                                        <td>{{ $item->freq_respiratoria }}</td>
-                                        <td>{{ $item->freq_cardiaca }}</td>
                                         <td>{{ $item->imc }}</td>
 
                                         <td class="text-right">

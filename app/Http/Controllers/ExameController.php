@@ -223,7 +223,7 @@ class ExameController extends Controller
         if (!$user->can('criar todos') && !$user->can('criar exame') && !$user->can('monitoramento central atendimento')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
         }
-
+       
         $request->validate([
             "data_exame" => "required|date",
             "hora_exame" => "required",

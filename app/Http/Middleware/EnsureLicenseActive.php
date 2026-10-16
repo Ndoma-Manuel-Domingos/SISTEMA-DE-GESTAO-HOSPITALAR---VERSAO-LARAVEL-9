@@ -272,6 +272,7 @@ class EnsureLicenseActive
             }
         });
 
+
         $user = $request->user();
         if (! $user) return $next($request);
 
@@ -296,13 +297,6 @@ class EnsureLicenseActive
             ->where('status', 'active')
         ->first();
             
-        // $license = License::where('activated_for_company_id', $companyId)
-        //     ->where('used', true)
-        //     ->where('status', 'active')
-        //     ->where('start_date', '<=', Crypt::encryptString($today))
-        //     ->where('end_date', '>=', Crypt::encryptString($today))
-        //     ->first();
-            
         if($enti->at_d === NULL || $enti->at_d === "") {
             // se request for página de ativação/asset, permitir; senão redirecionar para ativação
             if ($request->is('licenses/*') || $request->is('logout') || $request->is('login') || $request->is('sanctum/*')) {
@@ -310,7 +304,9 @@ class EnsureLicenseActive
             }
             return redirect()->route('licenses.upload')->withErrors(__('messages.erro_licenca'));
         }
-        
+
+        dd($enti->at_d);
+
         if($this->decryptNumber($enti->at_d) !== $this->getMacAddress()) {
             if ($request->is('licenses/*') || $request->is('logout') || $request->is('login') || $request->is('sanctum/*')) {
                 return $next($request);
@@ -318,6 +314,7 @@ class EnsureLicenseActive
             return redirect()->route('licenses.upload')->withErrors(__('messages.erro_licenca'));
         }
                 
+
         if (!$license) {
             // se request for página de ativação/asset, permitir; senão redirecionar para ativação
             if ($request->is('licenses/*') || $request->is('logout') || $request->is('login') || $request->is('sanctum/*')) {
@@ -343,17 +340,17 @@ class EnsureLicenseActive
         return $next($request);
     }
     
-    function encryptMachineId($id)
+    function encryptMachineId(string $id)
     {
         return Crypt::encryptString($id);
     }
     
-    function encryptNumber($number)
+    function encryptNumber(string $number)
     {
         return Crypt::encryptString($number);
     }
     
-    function decryptNumber($encrypted)
+    function decryptNumber(string $encrypted)
     {
         return Crypt::decryptString($encrypted);
     }

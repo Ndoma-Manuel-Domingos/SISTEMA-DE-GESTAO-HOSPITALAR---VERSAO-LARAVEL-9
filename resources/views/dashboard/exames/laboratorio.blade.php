@@ -26,6 +26,61 @@
     <div class="content">
         <div class="container-fluid">
 
+
+             {{-- Indicadores da triagem --}}
+            <div class="row">
+                <div class="col-12 col-md-3">
+                    <div class="small-box bg-light-warning">
+                        <div class="inner">
+                            <h3>{{ $totalAguardando ?? 0 }}</h3>
+                            <p>Exames Aguardando</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="small-box bg-light-success">
+                        <div class="inner">
+                            <h3>{{ $totalAtendidosHoje ?? 0 }}</h3>
+                            <p>Exames concluídas hoje</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="small-box bg-light-danger">
+                        <div class="inner">
+                            <h3>{{ $totalAtrasadoHoje ?? 0 }}</h3>
+                            <p>Exames atrasadas hoje</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <a href="{{ route('resultados-exames.index') }}">
+                        <div class="small-box bg-light-primary">
+                            <div class="inner">
+                                <h3>{{ $resultados ?? 0 }}</h3>
+                                <p>Resultados de Exames</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-file-medical-alt"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+
             <div class="row">
                 <div class="col-12 col-md-12">
                     <div class="card">
@@ -105,14 +160,11 @@
             </div>
             <!-- /.row -->
 
-            <!-- /.row -->
             <div class="row">
                 <div class="col-12 col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-tools">
-                                <a class="btn btn-light-danger" target="_blank" href="#"><i class="fas fa-file-pdf"></i> PDF</a>
-                            </div>
+                            <h1 class="h5">Exames realizados ate ao momento</h1>
                         </div>
                         @if ($exames)
                         <!-- /.card-header -->
@@ -245,7 +297,7 @@
 
     const podeAtender = @json($permissao);
     const urlAtender = "{{ route('laboratorio.create') }}";
-    const urlVerificar = "{{ route('atendimentos-verificar') }}";
+    const urlVerificar = "{{ route('laboratorio-verificar') }}";
 
     function mostrarPaciente(dados) {
 
@@ -307,21 +359,18 @@
     }
 
     function verificarPaciente() {
-        if (modalAberta)
-            return;
+        if (modalAberta) return;
+       
         $.ajax({
             url: urlVerificar
             , type: "GET"
             , dataType: "json"
             , timeout: 10000
             , success: function(retorno) {
-
                 if (!retorno.status) return;
-
                 if (pacienteEmEspera(retorno.id)) {
                     return;
                 }
-
                 mostrarPaciente(retorno);
             }
             , error: function(xhr, status, error) {

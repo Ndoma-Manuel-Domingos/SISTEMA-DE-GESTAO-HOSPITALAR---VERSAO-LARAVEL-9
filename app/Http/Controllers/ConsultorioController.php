@@ -14,6 +14,8 @@ use App\Models\Produto;
 use App\Models\ResultadoConsulta;
 use App\Models\ResultadoConsultaParamentro;
 use App\Models\ResultadoConsultaParamentroImagem;
+use App\Models\ResultadoExame;
+use App\Models\SolicitacaoMedica;
 use Illuminate\Http\Request;
 use App\Models\TipoAtendimento;
 use App\Models\User;
@@ -30,7 +32,7 @@ class ConsultorioController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -39,20 +41,45 @@ class ConsultorioController extends Controller
         }
 
         $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
-
-        $consultas = Consulta::with(["paciente", "cids", "exames", "paciente", "items", "medico", "entidade", "user"])->where([
-            ["entidade_id", "=", $entidade->empresa->id],
-        ])->orderBy("created_at", "desc")->get();
-
+        
         $tipo_atentimento = TipoAtendimento::whereIn("sigla", ["Consulta"])
             ->where("entidade_id", $entidade->empresa->id)
             ->pluck("id");
 
-        $atendimentos = Atendimento::whereIn("tipo_atendimento_id", $tipo_atentimento)
+        $query2 = Atendimento::whereIn("tipo_atendimento_id", $tipo_atentimento)
             ->where("entidade_id", $entidade->empresa->id)
-            ->whereDate("data_at", date("Y-m-d"))
-            ->whereIn("status", ["em atendimento"])
-            ->get();
+            ->whereIn("status", ["em atendimento"]);
+
+        $query = Consulta::with(["paciente", "cids", "exames", "paciente", "items", "medico", "entidade", "user"])->where([
+            ["entidade_id", $entidade->empresa->id],
+        ]);
+
+        $query3  = SolicitacaoMedica::where("entidade_id", $entidade->empresa->id);
+
+        $query4  = ResultadoExame::where('status', 'concluido')->where("entidade_id", $entidade->empresa->id);
+
+        // Se for médico, mostrar apenas as consultas dele.
+        // O administrador continua a visualizar todas as consultas.
+        $medico = Medico::where('gestor_conta', $user->id)->first();
+        if ($medico && $user->is_admin == false) {
+            $query->where('medico_id', $medico->id);
+            $query2->where('profissional_id', $medico->id);
+            $query3->where('medico_id', $medico->id);
+            $query4->where('medico_id', $medico->id);
+        }
+
+        $atendimentos = $query2->get();
+
+        $totalAtendidosHoje = (clone $query)->whereIn('status', ['CONCLUIDO'])->whereDate('created_at', date('Y-m-d'))->count();
+        $totalAtrasadoHoje = (clone $query)->whereIn('status', ['ATRASADA'])->whereDate('data_consulta', date('Y-m-d'))->count();
+
+        $solicitacoes = $query3->count();
+
+        $resultadoExames = $query4->count();
+
+        $consultasNaoAtendidas = (clone $query)->whereNotIn('status', ['CONCLUIDO'])->count();
+
+        $consultas = $query->orderBy("created_at", "desc")->get();
 
         $empresa = Entidade::with(["variacoes", "clientes", "marcas", "categorias"])->findOrFail($entidade->empresa->id);
 
@@ -62,12 +89,55 @@ class ConsultorioController extends Controller
             "consultas" => $consultas,
             "empresa" => $empresa,
             "atendimentos" => $atendimentos,
+            "totalAguardando" => count($atendimentos),
+            "totalAtendidosHoje" => $totalAtendidosHoje,
+            "totalAtrasadoHoje" => $totalAtrasadoHoje,
+            "solicitacoes" => $solicitacoes,
+            "resultadoExames" => $resultadoExames,
+            "consultasNaoAtendidas" => $consultasNaoAtendidas,
             "empresa_logada" => User::with(["empresa.empresa_modulos", "empresa.tipo_entidade"])->findOrFail(Auth::user()->id),
         ];
 
         return view("dashboard.consultas.consultorio", $head);
     }
 
+    public function semFichaPreenchidas(Request $request)
+    {
+        $user = auth()->user();
+
+        if (!$user->can('monitoramento consultorio') && !$user->can('consultorio')) {
+            return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
+        }
+
+        $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
+
+        $query = Consulta::with(["paciente", "cids", "exames", "paciente", "items", "medico", "entidade", "user"])->where([
+            ["entidade_id", $entidade->empresa->id],
+        ]);
+
+        // Se for médico, mostrar apenas as consultas dele.
+        // O administrador continua a visualizar todas as consultas.
+        if ($user->can('consultorio') && $user->can('monitoramento consultorio')) {
+            $medico = Medico::where('gestor_conta', $user->id)->first();
+            if ($medico && $user->is_admin == false) {
+                $query->where('medico_id', $medico->id);
+            }
+        }
+
+        $consultas = $query->whereNotIn('status', ['CONCLUIDO'])->orderBy("created_at", "desc")->get();
+
+        $empresa = Entidade::with(["variacoes", "clientes", "marcas", "categorias"])->findOrFail($entidade->empresa->id);
+
+        $head = [
+            "titulo" => "Fichas de Consulta por Preencher",
+            "descricao" => env("APP_NAME"),
+            "consultas" => $consultas,
+            "empresa" => $empresa,
+            "empresa_logada" => User::with(["empresa.empresa_modulos", "empresa.tipo_entidade"])->findOrFail(Auth::user()->id),
+        ];
+
+        return view("dashboard.consultas.consultorio-sem-fichas-preenchidas", $head);
+    }
 
     public function create(Request $request)
     {
@@ -283,16 +353,25 @@ class ConsultorioController extends Controller
 
     public function verificarPaciente()
     {
+        $user = auth()->user();
+
         $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
 
         $tipo_atendimento = TipoAtendimento::where('sigla', 'Consulta')->where('entidade_id', $entidade->empresa->id)->first();
 
-        $atendimento = Atendimento::with(['paciente', 'consultas.items.produto'])
+        $query = Atendimento::with(['paciente', 'consultas.items.produto'])
             ->where('tipo_atendimento_id', $tipo_atendimento->id)
-            ->whereDate("data_at", date("Y-m-d"))
             ->whereIn("status", ["em atendimento"])
-            ->where('entidade_id', $entidade->empresa->id)
-            ->first();
+            ->where('entidade_id', $entidade->empresa->id);
+
+        if ($user->can('consultorio') && $user->can('monitoramento consultorio')) {
+            $medico = Medico::where('gestor_conta', $user->id)->first();
+            if ($medico && $user->is_admin == false) {
+                $query->where('profissional_id', $medico->id);
+            }
+        }
+
+        $atendimento = $query->first();
 
         if ($atendimento) {
 
@@ -319,5 +398,39 @@ class ConsultorioController extends Controller
         return response()->json([
             'status' => false
         ]);
+    }
+
+    public function pedidoExames()
+    {
+        $user = auth()->user();
+
+        if (!$user->can('monitoramento consultorio') && !$user->can('consultorio')) {
+            return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
+        }
+
+        $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
+
+        $query3 = SolicitacaoMedica::with(["items", "prioridade", "atendimento", "paciente", "medico"])->where('entidade_id', $entidade->empresa->id);
+
+        if ($user->can('consultorio') && $user->can('monitoramento consultorio')) {
+            $medico = Medico::where('gestor_conta', $user->id)->first();
+            if (!$medico) {
+                $query3->whereRaw('1 = 0');
+            } else {
+                $query3->where('medico_id', $medico->id);
+            }
+        }
+
+        $solicitacoes  = $query3->orderBy('created_at', 'desc')->get();
+
+        $head = [
+            "titulo" => "Pedidos de Exames e outros",
+            "descricao" => env('APP_NAME'),
+            "entidade" => $entidade,
+            "solicitacoes" => $solicitacoes,
+            "empresa_logada" => User::with(['empresa.empresa_modulos', 'empresa.tipo_entidade'])->findOrFail(Auth::user()->id),
+        ];
+        
+        return view('dashboard.consultas.pedidos-exames', $head);
     }
 }

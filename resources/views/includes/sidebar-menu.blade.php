@@ -137,14 +137,6 @@
                 </li>
                 @endif
 
-                @if (Auth::user()->can('painel financeiro'))
-                <li class="nav-item">
-                    <a href="{{ route('agentes-pagamentos.index') }}" class="nav-link {{ Route::currentRouteNamed('agentes-pagamentos.index') ? 'active' : '' }}">
-                        <i class="far fa-circle nav-icon"></i>
-                        <p>Pagamento de Agentes</p>
-                    </a>
-                </li>
-                @endif
             </ul>
         </li>
 
@@ -534,6 +526,39 @@
                     </a>
                 </li>
                 @endif
+                
+                @if (Auth::user()->can('painel financeiro'))
+                <li class="nav-item">
+                    <a href="{{ route('agentes-pagamentos.index') }}" class="nav-link {{ Route::currentRouteNamed('agentes-pagamentos.index') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Pagamento de Agentes</p>
+                    </a>
+                </li>
+                @endif
+                
+                @if (Auth::user()->can('painel financeiro'))
+                <li class="nav-item">
+                    <a href="{{ route('medicos-pagamentos.index') }}" class="nav-link {{ Route::currentRouteNamed('medicos-pagamentos.index') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Pagamento de Médicos</p>
+                    </a>
+                </li>
+                @endif
+                
+                @if (Auth::user()->can('criar todos') || Auth::user()->can('criar facturas'))
+                <li class="nav-item">
+                    <a href="{{ route('contas-hospitalares.index') }}" class="nav-link {{ Route::currentRouteNamed('contas-hospitalares.index') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Conta Hospitalar</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('fechos-contas.index') }}" class="nav-link {{ Route::currentRouteNamed('fechos-contas.index') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Cobrança Seguradoras</p>
+                    </a>
+                </li>
+                @endif
 
             </ul>
         </li>
@@ -552,21 +577,6 @@
                 </p>
             </a>
             <ul class="nav nav-treeview">
-
-                @if (Auth::user()->can('criar todos') || Auth::user()->can('criar facturas'))
-                <li class="nav-item">
-                    <a href="{{ route('contas-hospitalares.index') }}" class="nav-link {{ Route::currentRouteNamed('contas-hospitalares.index') ? 'active' : '' }}">
-                        <i class="far fa-circle nav-icon"></i>
-                        <p>Conta Hospitalar</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="{{ route('fechos-contas.index') }}" class="nav-link {{ Route::currentRouteNamed('fechos-contas.index') ? 'active' : '' }}">
-                        <i class="far fa-circle nav-icon"></i>
-                        <p>Cobrança Seguradoras</p>
-                    </a>
-                </li>
-                @endif
 
                 @if (Auth::user()->can('criar todos') || Auth::user()->can('criar facturas'))
                 <li class="nav-item">
@@ -1173,6 +1183,13 @@
                 </li>
                 @endif
 
+                <li class="nav-item">
+                    <a href="{{ route('relatorios.hospital') }}" class="nav-link {{ Route::currentRouteNamed('relatorios.hospital*') ? 'active' : '' }}">
+                        <i class="far fa-circle nav-icon"></i>
+                        <p>Relatórios hospitalares</p>
+                    </a>
+                </li>
+
                 @if ($empresa_logada->empresa->tipo_entidade->sigla != 'HOSP')
 
                 @if (Auth::user()->can('listar todos') || Auth::user()->can('listar vendas'))
@@ -1503,7 +1520,6 @@
 
             @if ($empresa_logada->empresa->tipo_entidade->sigla == 'HOSP' && Auth::user()->can('controle de agentes'))
             <ul class="nav nav-treeview">
-
 
                 @if (Auth::user()->can('listar todos') || Auth::user()->can('listar camara'))
                 <li class="nav-item">

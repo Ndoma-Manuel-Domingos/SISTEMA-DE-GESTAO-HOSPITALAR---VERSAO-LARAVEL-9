@@ -15,6 +15,7 @@ use App\Http\Controllers\app\GrupoController;
 use App\Http\Controllers\app\ImpostoController;
 use App\Http\Controllers\app\InternamentoController;
 use App\Http\Controllers\app\MedicoController;
+use App\Http\Controllers\app\MedicoPagamentoController;
 use App\Http\Controllers\app\MorgueController;
 use App\Http\Controllers\app\ObitoController;
 use App\Http\Controllers\app\ParamentroExameController;
@@ -47,6 +48,7 @@ use App\Http\Controllers\Odontologia\DenteController;
 use App\Http\Controllers\Odontologia\EstadoDenteController;
 use App\Http\Controllers\Odontologia\ProcedimentoController;
 use App\Http\Controllers\Odontologia\TipoDenticaoController;
+use App\Http\Controllers\RelatorioHospitalController;
 use App\Http\Controllers\ResultadoExameController;
 use App\Http\Controllers\SolicitacaoMedicaController;
 use App\Http\Controllers\TicketController;
@@ -56,6 +58,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/dashboard-hospital', [HomeController::class, 'dashboardHospital'])->name('dashboard-hospital');
 
+Route::get('/relatorios/hospital',[RelatorioHospitalController::class, 'index'])->name('relatorios.hospital');
+Route::get('/relatorios/hospital/dados',[RelatorioHospitalController::class, 'dados'])->name('relatorios.hospital.dados');
 
 Route::prefix('enferms')->group(function () {
     Route::resource('/enfermeiros', EnfermeiroController::class);
@@ -64,6 +68,8 @@ Route::prefix('enferms')->group(function () {
 Route::prefix('medics')->group(function () {
     Route::resource('/medicos', MedicoController::class);
 });
+
+Route::get('/medicos/actualizar-dados',[MedicoController::class, 'update_data'])->name('medicos.actualizar-dados');
 
 Route::prefix('triangs')->group(function () {
     Route::resource('/triagens', TriagemController::class);
@@ -88,6 +94,9 @@ Route::prefix('agente')->group(function () {
 Route::get('/agentes/dashboard', [AgenteController::class, 'dashboard'])->name('agentes.dashboard');
 Route::post('/agentes/{agente}/status', [AgenteController::class, 'status'])->name('agentes.status');
 Route::resource('/agentes-pagamentos', AgentePagamentoController::class);
+Route::resource('/medicos-pagamentos', MedicoPagamentoController::class);
+Route::get('/medicos-pagamentos/comissoes/{medico}', [MedicoPagamentoController::class, 'comissoes'])->name('agentes-pagamentos.comissoes');
+Route::get('/medicos-comissoes/{id}/imprimir', [MedicoPagamentoController::class, 'imprimir'])->name('medicos.comissoes.imprimir');
 
 Route::get('/lista-pagamentos-agente', [AgenteController::class, 'pagamentos'])->name('lista.pagamentos-agentes');
 Route::get('/lista-comissoes-agente', [AgenteController::class, 'comissoes'])->name('lista.comissoes-agentes');
@@ -110,12 +119,16 @@ Route::post('/adicionar-item-solicitacoes-medicas', [SolicitacaoMedicaController
 Route::delete('/remover-item-solicitacoes-medicas/{id}', [SolicitacaoMedicaController::class, 'deleteItems'])->name('remover-items-solicitacoes-medicas');
 Route::post('/confirmar-solicitacoes-medicas', [SolicitacaoMedicaController::class, 'confirmarItem'])->name('confirmar.items-solicitacoes-medicas');
 Route::get('/pdf-solicitacoes-medicas', [SolicitacaoMedicaController::class, 'export'])->name('pdf.solicitacoes-medicas');
+Route::get('/pdf-solicitacoes-medicas/{id}/individual', [SolicitacaoMedicaController::class, 'pdf'])->name('pdf.solicitacoes-medicas-individual');
 
 Route::get('/carregar/listar-itens', [SolicitacaoMedicaController::class, 'carregarItens']);
+Route::get('/produtos-por-tipo/{tipo}', [SolicitacaoMedicaController::class, 'porTipo'])->name('produtos.porTipo');
 
 Route::prefix('consultor')->group(function () {
     Route::resource('/consultorio', ConsultorioController::class);
 });
+Route::get('/consultorio/sem-fichas-preenchidas', [ConsultorioController::class, 'semFichaPreenchidas'])->name('consultorio.sem-fichas-preenchidas');
+Route::get('/consultorio/pedidos-exames', [ConsultorioController::class, 'pedidoExames'])->name('consultorio-pedidos-exames');
 Route::get('/consultorio/verificar', [ConsultorioController::class, 'verificarPaciente'])->name('consultorio-verificar');
 Route::post('/consultas/transcrever', [ConsultaController::class, 'transcrever'])->name('consultas.transcrever');
 

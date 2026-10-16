@@ -26,11 +26,94 @@
     <div class="content">
         <div class="container-fluid">
 
+            {{-- Indicadores da triagem --}}
+            <div class="row">
+                <div class="col-12 col-md-3">
+                    <div class="small-box bg-light-warning">
+                        <div class="inner">
+                            <h3>{{ $totalAguardando ?? 0 }}</h3>
+                            <p>Aguardando consultas</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <a href="{{ route('consultorio.sem-fichas-preenchidas') }}">
+                        <div class="small-box bg-light-success">
+                            <div class="inner">
+                                <h3>{{ $consultasNaoAtendidas ?? 0 }}</h3>
+                                <p>Consultas sem ficha actualizadas</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="small-box bg-light-success">
+                        <div class="inner">
+                            <h3>{{ $totalAtendidosHoje ?? 0 }}</h3>
+                            <p>Consultas concluídas hoje</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="small-box bg-light-danger">
+                        <div class="inner">
+                            <h3>{{ $totalAtrasadoHoje ?? 0 }}</h3>
+                            <p>Consultas atrasadas hoje</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <a href="{{ route('consultorio-pedidos-exames') }}">
+                        <div class="small-box bg-light-primary">
+                            <div class="inner">
+                                <h3>{{ $solicitacoes ?? 0 }}</h3>
+                                <p>Pedidos de Exames</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-file-waveform"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <a href="{{ route('resultados-exames.index', ['status' => 'concluido']) }}">
+                        <div class="small-box bg-light-warning">
+                            <div class="inner">
+                                <h3>{{ $resultadoExames ?? 0 }}</h3>
+                                <p>Resultados de Exames</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-file-medical-alt"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+
+            </div>
+
             <div class="row">
                 <div class="col-12 col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            <h1 class="h5">Consultas pendentes</h1>
+                            <h1 class="h5">Consultas aguardando <small>(pacientes aguardando as consultas com o médico)</small></h1>
                         </div>
 
                         @if ($atendimentos)
@@ -113,11 +196,8 @@
                 <div class="col-12 col-md-12">
                     <div class="card">
                         <div class="card-header">
-                            {{-- <div class="card-tools">
-                                <a class="btn btn-light-danger" target="_blank" href="#"><i class="fas fa-file-pdf"></i> PDF</a>
-                            </div> --}}
+                            <h1 class="h5">Consultas já realizadas</h1>
                         </div>
-
                         @if ($consultas)
                         <!-- /.card-header -->
                         <div class="card-body table-responsive">
@@ -157,7 +237,7 @@
                                         @if ($item->status == 'ATRASADA')
                                         <td class="text-light-danger">{{ $item->status ?? "N/A" }}</td>
                                         @endif
-                                        <td>{{ $item->data_consulta }}</td>
+                                        <td>{{ $item->data_consulta->format("d/m/Y") }}</td>
                                         <td>{{ $item->hora_consulta }}</td>
 
                                         <td class="text-right">
@@ -170,11 +250,14 @@
                                                     @if (Auth::user()->can('listar todos') || Auth::user()->can('listar consulta') || Auth::user()->can('consultorio'))
                                                     <a class="dropdown-item" href="{{ route('consultas.show', $item->id) }}"><i class="fas fa-eye text-light-primary"></i> {{ __('messages.mais_detalhes') }} </a>
                                                     @endif
-                                                    @if (Auth::user()->can('editar todos') || Auth::user()->can('editar consulta') || Auth::user()->can('consultorio'))
-                                                    <a class="dropdown-item" href="{{ route('consultas.edit', $item->id) }}"><i class="fas fa-edit text-light-success"></i> {{ __('messages.actualizar') }}</a>
+
+                                                    @if (Auth::user()->can('consultorio') && $item->atendimento->status !== 'atendido')
+                                                    <a class="dropdown-item" href="{{ route('consultorio.create', ['origem' => 'atendimento', 'atendimento_id' => $item->atendimento_id]) }}"><i class="fas fa-edit text-light-success"></i> {{ __('messages.actualizar') }}</a>
                                                     @endif
 
+
                                                     @if (Auth::user()->can('consultorio'))
+                                                    
                                                     @if ($item->status == 'CONCLUIDO')
                                                     <a class="dropdown-item" href="{{ route('consulta-receita-medica', $item->atendimento_id) }}"><i class="fas fa-table text-light-primary"></i> Receitar o Paciente</a>
                                                     <a class="dropdown-item" href="{{ route('internamentos.create', ['atendimento_id' => $item->atendimento_id] ) }}"><i class="fas fa-table text-light-primary"></i> Internar o paciente</a>
@@ -182,6 +265,7 @@
 
                                                     @if ($item->status == 'EM ATENDIMENTO')
                                                     <a class="dropdown-item" href="{{ route('consulta-receita-medica', $item->atendimento_id) }}"><i class="fas fa-table text-light-primary"></i> Receitar o Paciente</a>
+                                                    <a class="dropdown-item" href="{{ route('consultorio.create', ['origem' => 'atendimento', 'atendimento_id' => $item->atendimento_id]) }}"><i class="fas fa-arrow-right text-light-primary"></i> Continuar as consulta </a>
                                                     @endif
 
                                                     <div class="dropdown-divider"></div>
@@ -317,8 +401,8 @@ $permissao = Auth::user()->can('editar todos') || Auth::user()->can('consultorio
     }
 
     function verificarPaciente() {
-        if (modalAberta)
-            return;
+        if (modalAberta) return;
+
         $.ajax({
             url: urlVerificar
             , type: "GET"

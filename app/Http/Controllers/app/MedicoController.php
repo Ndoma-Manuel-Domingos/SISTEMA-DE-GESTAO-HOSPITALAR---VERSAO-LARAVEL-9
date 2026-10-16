@@ -99,11 +99,8 @@ class MedicoController extends Controller
             "nome" => "required|string",
             "nif" => "required|string",
             "tipo" => "required|string",
-            // "numero_cedula" => "required|string|unique:medicos,numero_cedula",
-            // "data_emissao_cedula" => "required|string",
-            // "status_profissional" => "required|string",
-            // "especialidade_id" => "required|string",
         ]);
+
 
         $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
 
@@ -172,7 +169,7 @@ class MedicoController extends Controller
                 ]);
                 $user->assignRole($role);
             }
-
+            
             $funcionario = Funcionario::create([
                 "conta" => $nova_conta,
                 "nif" => $request->nif,
@@ -223,6 +220,8 @@ class MedicoController extends Controller
                 "data_emissao_cedula" => $request->data_emissao_cedula,
                 "data_validade_cedula" => $request->data_validade_cedula,
                 "status_profissional" => $request->status_profissional,
+                "tipo_comissao" => $request->tipo_comissao,
+                "valor_comissao" => $request->valor_comissao,
                 "tipo" => $request->tipo,
                 "gestor_conta" => $user->id ?? NULL,
                 "user_id" => Auth::user()->id,
@@ -242,6 +241,20 @@ class MedicoController extends Controller
         }
 
         return response()->json(['success' => true, 'message' => "Dados Salvos com sucesso!"], 200);
+    }
+
+    public function update_data()
+    {
+        $funcionarios = Funcionario::get();
+        foreach ($funcionarios as $value) {
+            $medico = Medico::where('funcionario_id', $value->id)->first();
+            if($medico) {
+                $medico->gestor_conta = $value->gestor_conta;
+                $medico->update();
+            }
+        }
+
+        dd("OPERACAO CONCLUIDA...");
     }
 
     /**
@@ -313,10 +326,10 @@ class MedicoController extends Controller
         $request->validate([
             "nome" => "required|string",
             "nif" => "required|string",
-            "numero_cedula" => "required|string",
-            "data_emissao_cedula" => "required|string",
-            "status_profissional" => "required|string",
-            "especialidade_id" => "required|string",
+            // "numero_cedula" => "required|string",
+            // "data_emissao_cedula" => "required|string",
+            // "status_profissional" => "required|string",
+            // "especialidade_id" => "required|string",
         ]);
 
 
@@ -424,6 +437,8 @@ class MedicoController extends Controller
             $medico->data_validade_cedula = $request->data_validade_cedula;
             $medico->tipo = $request->tipo;
             $medico->status_profissional = $request->status_profissional;
+            $medico->tipo_comissao = $request->tipo_comissao;
+            $medico->valor_comissao = $request->valor_comissao;
             $medico->especialidade_id = $request->especialidade_id;
 
             $funcionario->update();

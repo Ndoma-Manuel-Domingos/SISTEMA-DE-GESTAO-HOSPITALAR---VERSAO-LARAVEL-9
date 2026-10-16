@@ -137,7 +137,7 @@
                                         @if ($item->status == 'ATRASADA')
                                         <td class="text-light-danger">{{ $item->status ?? "N/A" }}</td>
                                         @endif
-                                        <td>{{ $item->data_consulta }}</td>
+                                        <td>{{ $item->data_consulta->format("d/m/Y") }}</td>
                                         <td>{{ $item->hora_consulta }}</td>
 
                                         <td class="text-right">

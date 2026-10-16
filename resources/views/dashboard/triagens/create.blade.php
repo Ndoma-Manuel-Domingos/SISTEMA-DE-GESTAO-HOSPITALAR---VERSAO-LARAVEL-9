@@ -98,7 +98,7 @@
                                 </button>
                             </div>
                             <audio id="player" controls style="display:none"></audio>
-                            <input type="text" id="queixa_audio" name="queixa_audio">
+                            <input type="hidden" id="queixa_audio" name="queixa_audio">
                         </div>
 
                         <!-- Sinais Vitais -->

@@ -155,7 +155,6 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-
                                     <div class="col-12 col-md-3 mb-3">
                                         <label for="tipo" class="form-label">Tipo de Profissional:</label>
                                         <select type="text" class="form-control select2" name="tipo" aria-placeholder="Nome da entidade que forneceu o registro" id="tipo">
@@ -276,6 +275,29 @@
 
                                 </div>
 
+                            </div>
+                        </div>
+      
+                        <div class="card">
+                            <div class="card-header">
+                                <h6>Dados de pagamentos ou comissões</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-12 col-md-6 mb-3">
+                                        <label for="tipo_comissao" class="form-label">Tipo Comissão</label>
+                                        <select type="text" class="form-control select2" name="tipo_comissao" aria-placeholder="Nome da entidade que forneceu o registro" id="tipo_comissao">
+                                            <option value="valor" {{ $medico->tipo_comissao == "valor" ? 'selected' : '' }}>Valor Monetário</option>
+                                            <option value="percentagem" {{ $medico->tipo_comissao == "percentagem" ? 'selected' : '' }}>Percentagem</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12 col-md-6 mb-3">
+                                        <label for="valor_comissao" class="form-label">Valor da Comissão ou taxa da comissão</label>
+                                        <input type="valor_comissao" class="form-control" name="valor_comissao" value="{{ $medico->valor_comissao ?? old('valor_comissao') }}" placeholder="Valor da comissão">
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
 

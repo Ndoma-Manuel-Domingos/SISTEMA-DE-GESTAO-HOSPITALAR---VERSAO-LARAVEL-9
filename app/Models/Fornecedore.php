@@ -47,7 +47,6 @@ class Fornecedore extends Model
         return $this->hasMany(AgentePagamento::class, 'agente_id', 'id');
     }
 
-
     public function comissoes_pendente()
     {
         return $this->commissoes()->where('status', false);

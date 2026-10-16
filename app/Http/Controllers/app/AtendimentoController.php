@@ -5,10 +5,12 @@ namespace App\Http\Controllers\app;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\TraitHelpers;
 use App\Models\Atendimento;
+use App\Models\Caixa;
 use App\Models\Categoria;
 use App\Models\Cliente;
 use App\Models\Consulta;
 use App\Models\ConsultaItem;
+use App\Models\TipoPagamento;
 use App\Models\Fornecedore;
 use App\Models\Medico;
 use App\Models\Prioridade;
@@ -18,7 +20,6 @@ use App\Models\ResultadoConsultaParamentro;
 use App\Models\ResultadoConsultaParamentroImagem;
 use App\Models\SolicitacaoMedica;
 use App\Models\TipoAtendimento;
-use App\Models\TipoPagamento;
 use App\Models\User;
 use App\Services\ContaHospitalarService;
 use App\Services\RelatorioAtendimentoService;
@@ -80,35 +81,82 @@ class AtendimentoController extends Controller
 
     public function index(Request $request)
     {
-        //
-        $user = auth()->user();
-
-        if (!$user->can('listar todos') && !$user->can('listar atendimento') && !$user->can('monitoramento central atendimento')) {
-            return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
+        $user = Auth::user();
+    
+        if (
+            !$user->can('listar todos') &&
+            !$user->can('listar atendimento') &&
+            !$user->can('monitoramento central atendimento')
+        ) {
+            return redirect()->back()->with(
+                'error-permissao',
+                "Você não possui permissão para esta operação, por favor, contacte o administrador!"
+            );
         }
-
+    
         $entidade = User::with(["empresa"])->findOrFail(Auth::user()->id);
-
-        if (empty($request->data_at) && !isset($request->data_at)) {
-            $request->data_at = date("Y-m-d");
-        }
-
-        $query = Atendimento::with(["paciente", "prioridade", "tipo"])
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Pesquisa
+        |--------------------------------------------------------------------------
+        |
+        | Regra:
+        | - Sem pesquisa e sem data: mostrar apenas os atendimentos de hoje.
+        | - Com pesquisa por nome/NIF: pesquisar em qualquer data.
+        | - Se uma data for informada explicitamente, respeitar essa data.
+        |
+        */
+    
+        $temPesquisa = $request->filled('search');
+        $temData = $request->filled('data_at');
+    
+        $query = Atendimento::with([
+            "paciente",
+            "prioridade",
+            "tipo"
+        ])
+            ->where("entidade_id", $entidade->entidade_id)
+    
             ->when($request->prioridad_id, function ($query, $value) {
                 $query->where('prioridade_id', $value);
             })
+    
             ->when($request->status, function ($query, $value) {
                 $query->where('status', $value);
             })
+    
             ->when($request->funcionario_id, function ($query, $value) {
                 $query->where('profissional_id', $value);
-            })
-            ->when($request->data_at, function ($query, $value) {
-                $query->whereDate('data_at', $value);
             });
-
-        if ($request->filled('search')) {
-            $search = $request->search;
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Data
+        |--------------------------------------------------------------------------
+        |
+        | Se o usuário pesquisou pelo nome/NIF e não informou uma data,
+        | NÃO aplicar filtro de data.
+        |
+        | Caso contrário, sem data informada, usar a data de hoje.
+        |
+        */
+    
+        if ($temData) {
+            $query->whereDate('data_at', $request->data_at);
+        } elseif (!$temPesquisa) {
+            $query->whereDate('data_at', date('Y-m-d'));
+        }
+    
+        /*
+        |--------------------------------------------------------------------------
+        | Pesquisa por paciente
+        |--------------------------------------------------------------------------
+        */
+    
+        if ($temPesquisa) {
+            $search = trim($request->search);
+    
             $query->where(function ($q) use ($search) {
                 $q->whereHas('paciente', function ($p) use ($search) {
                     $p->where('nome', 'like', "%{$search}%")
@@ -116,51 +164,115 @@ class AtendimentoController extends Controller
                 });
             });
         }
-
-        $atendimentos = $query->where("entidade_id", $entidade->entidade_id)
+    
+        $atendimentos = $query
             ->orderBy("id", "desc")
             ->get();
-
-        $agentes = Fornecedore::where("entidade_id", $entidade->entidade_id)->get();
-        $pacientes = Cliente::where("entidade_id", $entidade->entidade_id)->get();
-        $prioridades = Prioridade::where("entidade_id", $entidade->entidade_id)->get();
-        $tipos_atendimentos = TipoAtendimento::where("entidade_id", $entidade->entidade_id)->get();
-        $medicos = Medico::with(["funcionario"])->where("entidade_id", $entidade->entidade_id)->get();
-
-        $data = date("Y-m-d");
-
-        $solicitacoes = SolicitacaoMedica::where("entidade_id", $entidade->entidade_id)->whereDate('created_at', $data)->count();
-        $solicitacoes_pendente = SolicitacaoMedica::where('status', 'pendente')->whereDate('created_at', $data)->where("entidade_id", $entidade->entidade_id)->count();
-        $solicitacoes_agendado = SolicitacaoMedica::where('status', 'agendado')->whereDate('created_at', $data)->where("entidade_id", $entidade->entidade_id)->count();
-        $solicitacoes_executado = SolicitacaoMedica::where('status', 'executado')->whereDate('created_at', $data)->where("entidade_id", $entidade->entidade_id)->count();
-        $solicitacoes_cancelado = SolicitacaoMedica::where('status', 'cancelado')->whereDate('created_at', $data)->where("entidade_id", $entidade->entidade_id)->count();
-
-        $categoria = Categoria::whereIn('categoria', ['Consultas', 'Consulta', 'consultas', 'consulta'])->where('entidade_id', $entidade->empresa->id)->pluck("id");
-
-        $produtos = Produto::whereIn('categoria_id', $categoria)->where('entidade_id', $entidade->empresa->id)
+    
+        $agentes = Fornecedore::where(
+            "entidade_id",
+            $entidade->entidade_id
+        )->get();
+    
+        $pacientes = Cliente::where(
+            "entidade_id",
+            $entidade->entidade_id
+        )->get();
+    
+        $prioridades = Prioridade::where(
+            "entidade_id",
+            $entidade->entidade_id
+        )->get();
+    
+        $tipos_atendimentos = TipoAtendimento::where(
+            "entidade_id",
+            $entidade->entidade_id
+        )->get();
+    
+        $medicos = Medico::with(["funcionario"])
+            ->where("entidade_id", $entidade->entidade_id)
             ->get();
-
+    
+        $data = date("Y-m-d");
+    
+        $solicitacoes = SolicitacaoMedica::where(
+            "entidade_id",
+            $entidade->entidade_id
+        )
+            ->whereDate('created_at', $data)
+            ->count();
+    
+        $solicitacoes_pendente = SolicitacaoMedica::where('status', 'pendente')
+            ->whereDate('created_at', $data)
+            ->where("entidade_id", $entidade->entidade_id)
+            ->count();
+    
+        $solicitacoes_agendado = SolicitacaoMedica::where('status', 'agendado')
+            ->whereDate('created_at', $data)
+            ->where("entidade_id", $entidade->entidade_id)
+            ->count();
+    
+        $solicitacoes_executado = SolicitacaoMedica::where('status', 'executado')
+            ->whereDate('created_at', $data)
+            ->where("entidade_id", $entidade->entidade_id)
+            ->count();
+    
+        $solicitacoes_cancelado = SolicitacaoMedica::where('status', 'cancelado')
+            ->whereDate('created_at', $data)
+            ->where("entidade_id", $entidade->entidade_id)
+            ->count();
+    
+        $categoria = Categoria::whereIn('categoria', [
+            'Consultas',
+            'Consulta',
+            'consultas',
+            'consulta'
+        ])
+            ->where('entidade_id', $entidade->empresa->id)
+            ->pluck("id");
+    
+        $produtos = Produto::whereIn('categoria_id', $categoria)
+            ->where('entidade_id', $entidade->empresa->id)
+            ->get();
+    
         $head = [
             "titulo" => "Atendimentos",
             "descricao" => env("APP_NAME"),
             "produtos" => $produtos,
+    
             "solicitacoes" => $solicitacoes,
             "solicitacoes_pendente" => $solicitacoes_pendente,
             "solicitacoes_agendado" => $solicitacoes_agendado,
             "solicitacoes_executado" => $solicitacoes_executado,
             "solicitacoes_cancelado" => $solicitacoes_cancelado,
+    
             "atendimentos" => $atendimentos,
             "agentes" => $agentes,
             "pacientes" => $pacientes,
             "prioridades" => $prioridades,
             "tipos_atendimentos" => $tipos_atendimentos,
             "medicos" => $medicos,
-            "requests" => $request->all("paciente_id", "prioridad_id", "status", "funcionario_id", "data_inicio", "data_final"),
-            "empresa_logada" => User::with(["empresa.empresa_modulos", "empresa.tipo_entidade"])->findOrFail(Auth::user()->id),
+    
+            "requests" => $request->all(
+                "paciente_id",
+                "prioridad_id",
+                "status",
+                "funcionario_id",
+                "data_at",
+                "data_inicio",
+                "data_final",
+                "search"
+            ),
+    
+            "empresa_logada" => User::with([
+                "empresa.empresa_modulos",
+                "empresa.tipo_entidade"
+            ])->findOrFail(Auth::user()->id),
         ];
-
+    
         return view("dashboard.atendimentos.index", $head);
     }
+    
     /**
      * Display a listing of the resource.
      *
@@ -169,7 +281,7 @@ class AtendimentoController extends Controller
     public function imprimir(Request $request)
     {
         //
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('listar todos') && !$user->can('listar atendimento')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -240,7 +352,7 @@ class AtendimentoController extends Controller
      */
     public function store(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('criar todos') && !$user->can('criar atendimento') && !$user->can('monitoramento central atendimento')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -397,7 +509,7 @@ class AtendimentoController extends Controller
      */
     public function definir_atendido_paciente($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('editar todos') && !$user->can('editar atendimento') && !$user->can('monitoramento central atendimento')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -435,7 +547,7 @@ class AtendimentoController extends Controller
      */
     public function atender_paciente($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('editar todos') && !$user->can('editar atendimento') && !$user->can('monitoramento central atendimento')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -496,7 +608,7 @@ class AtendimentoController extends Controller
 
     public function show($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('listar todos') && !$user->can('listar atendimento') && !$user->can('monitoramento central atendimento') && !$user->can('consultorio')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -518,13 +630,23 @@ class AtendimentoController extends Controller
             "tipo"
         ])->findOrFail($id);
 
+
         $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
 
         $produtos = Produto::where('entidade_id', $entidade->empresa->id)->get();
+        
         $forma_pagamentos = TipoPagamento::get();
 
+        $caixaAberto = Caixa::where('active', true)
+            ->where('status', 'aberto')
+            ->where('status_admin', 'liberado')
+            ->where('user_open_id', Auth::user()->id)
+            ->where('entidade_id', $entidade->empresa->id)
+            ->first();
+            
         $head = [
             "titulo" => __('messages.mais_detalhes'),
+            "caixaAberto" => $caixaAberto,
             "descricao" => env("APP_NAME"),
             "atendimento" => $atendimento,
             "produtos" => $produtos,
@@ -543,7 +665,7 @@ class AtendimentoController extends Controller
      */
     public function edit($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('editar todos') && !$user->can('editar atendimento') && !$user->can('monitoramento central atendimento')) {
 
@@ -565,7 +687,7 @@ class AtendimentoController extends Controller
     public function update(Request $request, $id)
     {
         //
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('editar todos') && !$user->can('editar atendimento') && !$user->can('monitoramento central atendimento')) {
 
@@ -610,7 +732,7 @@ class AtendimentoController extends Controller
      */
     public function destroy($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('eliminar todos') && !$user->can('eliminar atendimento') && !$user->can('monitoramento central atendimento')) {
 
@@ -643,11 +765,11 @@ class AtendimentoController extends Controller
         $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
 
         $solicitacao = SolicitacaoMedica::with(['paciente', 'items.produto'])
-            ->whereDate('created_at', now()->toDateString())
+            //->whereDate('created_at', now()->toDateString())
             ->whereIn("status", ["pendente"])
             ->where('entidade_id', $entidade->empresa->id)
             ->first();
-
+        
         if ($solicitacao) {
 
             $especialidades = collect($solicitacao->items)

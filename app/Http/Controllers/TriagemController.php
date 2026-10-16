@@ -58,22 +58,104 @@ class TriagemController extends Controller
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
-     */
+    */
+
     public function index()
     {
-        $user = auth()->user();
+        $user = Auth::user();
+
+        if (
+            !$user->can('listar todos') &&
+            !$user->can('listar triagem') &&
+            !$user->can('monitoramento enfermagem triagem')
+        ) {
+            return redirect()->back()->with(
+                'error-permissao',
+                'Você não possui permissão para esta operação, por favor, contacte o administrador!'
+            );
+        }
+
+        $entidade = User::with('empresa')->findOrFail($user->id);
+        $entidadeId = $entidade->empresa->id;
+
+        // Consulta base das triagens da entidade
+        $query = FichaTriagem::with([
+            'paciente',
+            'prioridade',
+            'profissional',
+            'atendimento',
+            'tipo_atendimento',
+            'entidade',
+        ])->where('entidade_id', $entidadeId);
+
+        // Total de triagens concluídas hoje
+        $totalAtendidosHoje = (clone $query)
+            ->where('status', 'CONCLUIDO')
+            ->whereDate('created_at', today())
+            ->count();
+
+        // Triagens de hoje e pacientes antigos que continuam aguardando
+        $triagens = (clone $query)
+            ->where(function ($q) {
+                $q->whereDate('created_at', today())->orWhere('status', 'AGUARDANDO');
+            })
+            ->orderByDesc('created_at')
+            ->get();
+
+        // Tipos de atendimento de triagem
+        $tipoAtendimento = TipoAtendimento::where('sigla', 'Triagem')
+            ->where('entidade_id', $entidadeId)
+            ->pluck('id');
+
+        // Atendimentos em andamento hoje
+        $atendimentos = Atendimento::whereIn(
+            'tipo_atendimento_id',
+            $tipoAtendimento
+        )
+            ->where('entidade_id', $entidadeId)
+            ->whereDate('data_at', today())
+            ->where('status', 'em atendimento')
+            ->get();
+
+        // Dados da entidade
+        $empresa = Entidade::with([
+            'variacoes',
+            'clientes',
+            'marcas',
+            'categorias',
+        ])->findOrFail($entidadeId);
+
+        // Dados enviados para a view
+        $head = [
+            'titulo' => 'Triagens',
+            'descricao' => config('app.name'),
+            'triagens' => $triagens,
+            'empresa' => $empresa,
+            'atendimentos' => $atendimentos,
+            'totalAguardando' => $atendimentos->count(),
+            'totalAtendidosHoje' => $totalAtendidosHoje,
+            'empresa_logada' => User::with([
+                'empresa.empresa_modulos',
+                'empresa.tipo_entidade',
+            ])->findOrFail($user->id),
+        ];
+
+        return view('dashboard.triagens.index', $head);
+    }
+
+    public function _index()
+    {
+        $user = Auth::user();
 
         if (!$user->can('listar todos') && !$user->can('listar triagem') && !$user->can('monitoramento enfermagem triagem')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
         }
 
-        //
         $entidade = User::with(['empresa'])->findOrFail(Auth::user()->id);
+        $query = FichaTriagem::with(["paciente", "prioridade", "profissional", "atendimento", "tipo_atendimento", "entidade"])->where("entidade_id", $entidade->empresa->id);
+        $totalAtendidosHoje = (clone $query)->whereIn('status', ['CONCLUIDO'])->whereDate('created_at', date('Y-m-d'))->count();
 
-        $triagens = FichaTriagem::with(["paciente", "prioridade", "profissional", "atendimento", "tipo_atendimento", "entidade"])
-            ->where("entidade_id", $entidade->empresa->id)
-            ->orderBy("created_at", "desc")
-            ->get();
+        $triagens = $query->orderBy("created_at", "desc")->get();
 
         $tipo_atentimento = TipoAtendimento::whereIn("sigla", ["Triagem"])
             ->where("entidade_id", $entidade->empresa->id)
@@ -85,7 +167,6 @@ class TriagemController extends Controller
             ->whereIn("status", ["em atendimento"])
             ->get();
 
-
         $empresa = Entidade::with(["variacoes", "clientes", "marcas", "categorias"])->findOrFail($entidade->empresa->id);
 
         $head = [
@@ -94,6 +175,8 @@ class TriagemController extends Controller
             "triagens" => $triagens,
             "empresa" => $empresa,
             "atendimentos" => $atendimentos,
+            "totalAguardando" => count($atendimentos),
+            "totalAtendidosHoje" => $totalAtendidosHoje,
             "empresa_logada" => User::with(["empresa.empresa_modulos", "empresa.tipo_entidade"])->findOrFail(Auth::user()->id),
         ];
 
@@ -103,7 +186,7 @@ class TriagemController extends Controller
     //
     public function create(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('criar todos') && !$user->can('criar triagem') && !$user->can('monitoramento enfermagem triagem')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -162,7 +245,7 @@ class TriagemController extends Controller
      */
     public function store(Request $request, ConsultorioService $service)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('criar todos') && !$user->can('criar triagem') && !$user->can('monitoramento enfermagem triagem')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -180,8 +263,9 @@ class TriagemController extends Controller
         try {
             DB::beginTransaction();
             // Realizar operações de banco de dados aqui
-            $tipo_atendimento = TipoAtendimento::where("sigla", $request->tipo_atendimento_id)->first();
-
+            
+            $tipo_atendimento = TipoAtendimento::where("sigla", $request->tipo_atendimento_id)->where("entidade_id", $entidade->empresa->id)->first();
+            
             $triagem = FichaTriagem::updateOrCreate(
                 [
                     'atendimento_id' => $request->atendimento_id,
@@ -228,7 +312,9 @@ class TriagemController extends Controller
 
             if ($tipo_atendimento && isset($tipo_atendimento) && !empty($tipo_atendimento)) {
                 $atendimento = Atendimento::findOrFail($request->atendimento_id);
-                $atendimento->status = "aguardando";
+                
+                $atendimento->status = "em atendimento";
+                //$atendimento->status = "aguardando";
                 $atendimento->prioridade_id = $request->prioridade_id;
                 $atendimento->numero = "{$tipo_atendimento->sigla} - {$total_atendimentos}";
                 $atendimento->profissional_id = $request->profissional_id;
@@ -321,7 +407,7 @@ class TriagemController extends Controller
     public function show($id)
     {
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('listar todos') && !$user->can('listar triagem') && !$user->can('monitoramento enfermagem triagem')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -352,7 +438,7 @@ class TriagemController extends Controller
      */
     public function edit($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('editar todos') && !$user->can('editar triagem') && !$user->can('monitoramento enfermagem triagem')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -363,6 +449,7 @@ class TriagemController extends Controller
         //
         $entidade = User::with(["empresa"])->findOrFail(Auth::user()->id);
 
+        $pacientes = Cliente::where("entidade_id", $entidade->entidade_id)->get();
         $prioridades = Prioridade::where("entidade_id", $entidade->entidade_id)->get();
         $tipos_atendimentos = TipoAtendimento::where("entidade_id", $entidade->entidade_id)->get();
         $medicos = Medico::with(["funcionario"])->where("entidade_id", $entidade->entidade_id)->get();
@@ -374,6 +461,7 @@ class TriagemController extends Controller
             "prioridades" => $prioridades,
             "tipos_atendimentos" => $tipos_atendimentos,
             "medicos" => $medicos,
+            "pacientes" => $pacientes,
             "user" => Auth::user(),
             "empresa_logada" => User::with(['empresa.empresa_modulos', 'empresa.tipo_entidade'])->findOrFail(Auth::user()->id),
         ];
@@ -391,7 +479,7 @@ class TriagemController extends Controller
     public function update(Request $request, $id)
     {
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('editar todos') && !$user->can('editar triagem') && !$user->can('monitoramento enfermagem triagem')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");
@@ -405,50 +493,69 @@ class TriagemController extends Controller
             // Realizar operações de banco de dados aqui
 
             $ficha = FichaTriagem::findOrFail($id);
-
+            
+            
             $ficha->pressao = $request->pressao;
             $ficha->peso = $request->peso;
             $ficha->altura = $request->altura;
             $ficha->temperatura = $request->temperatura;
             $ficha->freq_respiratoria = $request->freq_respiratoria;
+
+            $ficha->estado_consciencia = $request->estado_consciencia;
+            $ficha->pressao_diatolica = $request->pressao_diatolica;
+            $ficha->saturacao_oxigenio = $request->saturacao_oxigenio;
+            $ficha->escala_dor = $request->escala_dor;
+            $ficha->circunferencia_abdominal = $request->circunferencia_abdominal;
+            $ficha->glicemia_capilar = $request->glicemia_capilar;
+            $ficha->gravidez = $request->gravidez;
+
             $ficha->freq_cardiaca = $request->freq_cardiaca;
             $ficha->imc = $this->calcularIMC($request->peso ?? 1, $request->altura ?? 1)['imc'];
             $ficha->imc_classificacao = $this->calcularIMC($request->peso ?? 1, $request->altura ?? 1)['classificacao'];
             $ficha->observacoes = $request->observacoes;
+            $ficha->queixa_principal = $request->queixa_principal;
             $ficha->profissional_id = $request->profissional_id;
             $ficha->prioridade_id = $request->prioridade_id;
             $ficha->tipo_atendimento_id = $request->tipo_atendimento_id;
             $ficha->status = "CONCLUIDO";
+        
+            
             $ficha->update();
-
+            
             // Defina o intervalo de hoje
             $inicioDoDia = Carbon::today();
             $fimDoDia = Carbon::today()->endOfDay();
 
-            $tipo_atendimento = TipoAtendimento::findOrFail($request->tipo_atendimento_id);
+            if($request->tipo_atendimento_id != null || $request->tipo_atendimento_id != "") {
+                $tipo_atendimento = TipoAtendimento::findOrFail($request->tipo_atendimento_id);
+    
+                $total_atendimentos = Atendimento::whereBetween('created_at', [$inicioDoDia, $fimDoDia])->where("tipo_atendimento_id", $tipo_atendimento->id ?? "")->where('entidade_id', $entidade->empresa->id)->count();
+                $total_atendimentos = $total_atendimentos  + 1;
+    
+                Atendimento::create([
+                    'status' => "em atendimento",
+                    'numero' => "{$tipo_atendimento->sigla} - {$total_atendimentos}",
+                    'cliente_id' => $ficha->paciente_id,
+                    'data_at' => date("Y-m-d"),
+                    'prioridade_id' => $request->prioridade_id,
+                    'tipo_atendimento_id' => $request->tipo_atendimento_id,
+                    'profissional_id' => $request->profissional_id,
+                    'user_id' => Auth::user()->id,
+                    'data_inicio' => date("Y-m-d H:i:s"),
+                    'data_final' => NULL,
+                    'entidade_id' => $entidade->empresa->id,
+                ]);
 
-            $total_atendimentos = Atendimento::whereBetween('created_at', [$inicioDoDia, $fimDoDia])->where("tipo_atendimento_id", $tipo_atendimento->id ?? "")->where('entidade_id', $entidade->empresa->id)->count();
-            $total_atendimentos = $total_atendimentos  + 1;
+            }
 
-            Atendimento::create([
-                'status' => "aguardando",
-                'numero' => "{$tipo_atendimento->sigla} - {$total_atendimentos}",
-                'cliente_id' => $ficha->paciente_id,
-                'data_at' => date("Y-m-d"),
-                'prioridade_id' => $request->prioridade_id,
-                'tipo_atendimento_id' => $request->tipo_atendimento_id,
-                'profissional_id' => $request->profissional_id,
-                'user_id' => Auth::user()->id,
-                'data_inicio' => date("Y-m-d H:i:s"),
-                'data_final' => NULL,
-                'entidade_id' => $entidade->empresa->id,
-            ]);
 
             // Se todas as operações foram bem-sucedidas, você pode fazer o commit
             DB::commit();
         } catch (\Exception $e) {
             // Caso ocorra algum erro, você pode fazer rollback para desfazer as operações
             DB::rollback();
+            
+            dd($e->getMessage());
 
             Alert::warning("Informação", $e->getMessage());
             return redirect()->back();
@@ -465,7 +572,7 @@ class TriagemController extends Controller
      */
     public function destroy($id)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!$user->can('eliminar todos') && !$user->can('eliminar triagem')) {
             return redirect()->back()->with('error-permissao', "Você não possui permissão para esta operação, por favor, contacte o administrador!");

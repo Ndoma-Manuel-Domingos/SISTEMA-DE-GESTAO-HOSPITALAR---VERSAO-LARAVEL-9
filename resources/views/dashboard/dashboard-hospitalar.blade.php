@@ -296,7 +296,7 @@
                     <a href="{{ route('consultorio.index') }}" class="text-decoration-none">
                         <div class="small-box bg-light-primary">
                             <div class=" inner">
-                                <h3>{{ number_format(0, 0, ',', '.') }}</h3>
+                                <h3>.</h3>
                                 <p class="text-uppercase">{{ __('messages.consultorio') }}</p>
                             </div>
                             <div class="icon">
@@ -312,7 +312,7 @@
                     <a href="{{ route('laboratorio.index') }}" class="text-decoration-none">
                         <div class="small-box bg-light-warning">
                             <div class=" inner">
-                                <h3>{{ number_format(0, 0, ',', '.') }}</h3>
+                                <h3>.</h3>
                                 <p class="text-uppercase">{{ __('messages.laboratorio') }}</p>
                             </div>
                             <div class="icon">

@@ -364,80 +364,9 @@
     <!-- ================================================= -->
 
     @foreach($exame->items as $item)
-    <div class="section" style="margin-top:25px;">
-        <div class="section-title">
-            {{ strtoupper($item->produto->nome ?? "") }}
-        </div>
-        <table class="info" style="margin-bottom:15px;">
-            <tr>
-                <td width="35%">
-                    <strong>Categoria</strong><br>
-                    {{ $item->produto ? $item->produto->categoria->categoria : "" }}
-                </td>
-                <td width="20%">
-                    <strong>Código</strong><br>
-                    {{ $item->produto->codigo ?? '-' }}
-                </td>
-                <td width="20%">
-                    <strong>Valor</strong><br>
-                    {{ number_format($item->valor,2,",",".") }}
-                </td>
-                <td width="25%">
-                    <strong>Estado</strong><br>
-                    <span style="color:#2e7d32;font-weight:bold;">
-                        FINALIZADO
-                    </span>
-                </td>
-            </tr>
-        </table>
-        @foreach($item->resultado_parametro_exame as $parametro)
-        <table style="margin-top:10px;">
-            <tr>
-                <td colspan="5" style="background:#0B6FA4;color:white;font-weight:bold;padding:8px;">{{ strtoupper($parametro->nome) }}</td>
-            </tr>
-
-            <tr style="background:#F3F7FA;">
-                <th style="border:1px solid #DDD;">Código</th>
-                <th style="border:1px solid #DDD;">Parâmetro</th>
-                <th style="border:1px solid #DDD;">Resultado</th>
-                <th style="border:1px solid #DDD;">Unidade</th>
-                <th style="border:1px solid #DDD;">Valor de Referência</th>
-            </tr>
-
-            @foreach($parametro->resultadosubparamentros as $resultado)
-
-            @if( $resultado->subparametroexame->tipo=="lista" || $resultado->subparametroexame->tipo=="numero" || $resultado->subparametroexame->tipo=="texto" || $resultado->subparametroexame->tipo=="textarea" || $resultado->subparametroexame->tipo=="booleano" || $resultado->subparametroexame->tipo=="data")
-            <tr>
-                <td style="border:1px solid #DDD;">
-                    {{ $resultado->subparametroexame->codigo ?? "-" }}
-                </td>
-                <td style="border:1px solid #DDD;">
-                    {{ $resultado->subparametroexame->nome }}
-                </td>
-                <td style="border:1px solid #DDD;">
-                    <strong style="font-size:12px;color:#0B6FA4;">
-                        {{ $resultado->valor }}
-                    </strong>
-                </td>
-                <td style="border:1px solid #DDD;">
-                    @if($resultado->subparametroexame->tipo=="lista")
-                    {{ $resultado->subparametroexame->opcoes }}
-                    @elseif($resultado->subparametroexame->tipo=="booleano")
-                    {{ $resultado->subparametroexame->texto_sim }}/{{ $resultado->subparametroexame->texto_nao }}
-                    @else
-                    {{ $resultado->subparametroexame->unidade }}
-                    @endif
-                </td>
-                <td style="border:1px solid #DDD;">
-                    {{ $resultado->subparametroexame->valor_referencia }}
-                </td>
-            </tr>
-            @endif
-            @endforeach
-        </table>
-        <br>
-        @endforeach
-    </div>
+    @include('dashboard.exames._parametro', [
+        "dado" => $item
+    ])
     @endforeach
 
     <!-- ================================================= -->
@@ -445,83 +374,10 @@
     <!-- ================================================= -->
 
     @foreach($exame->items as $item)
-    @foreach($item->resultado_parametro_exame as $parametro)
-    @php
-    $possuiImagem = false;
-    @endphp
-    @foreach($parametro->resultadosubparamentrosImagem as $imagem)
-    @if($imagem->subparametroexame->tipo=="imagem")
-    @php
-    $possuiImagem = true;
-    @endphp
-    @endif
+    @include('dashboard.exames._parametro-imagem', [
+        "dado" => $item
+    ])
     @endforeach
-    @if($possuiImagem)
-    <div class="section">
-        <div class="section-title">
-            IMAGENS DO EXAME
-        </div>
-        <table class="info">
-            <tr>
-                <td>
-                    <strong>Exame</strong><br>
-                    {{ $item->produto->nome ?? "" }}
-                </td>
-                <td>
-                    <strong>Categoria</strong><br>
-                    {{ $item->produto ? $item->produto->categoria->categoria : "" }}
-                </td>
-            </tr>
-        </table>
-        <br>
-        <table width="100%">
-            @php
-            $contador = 0;
-            @endphp
-            <tr>
-                @foreach($parametro->resultadosubparamentrosImagem as $imagem)
-                @if($imagem->subparametroexame->tipo=="imagem")
-                @php
-                $ficheiros = json_decode($imagem->ficheiros,true) ?? [];
-                @endphp
-                @foreach($ficheiros as $ficheiro)
-
-                <td width="50%" style="padding:10px;">
-                    <div style="border:1px solid #DDD;padding:8px;">
-                        <div style="text-align:center;font-weight:bold;margin-bottom:8px;color:#0B6FA4;">
-                            {{ $imagem->subparametroexame->nome }}
-                        </div>
-                        <div style="text-align:center;">
-                            <img src="{{ asset('/public/resultados/exames/'.$ficheiro) }}" title="" style="width:240px;height:220px;object-fit:contain;border:1px solid #CCC;">
-                        </div>
-                        @if(!empty($imagem->descricao))
-                        <div style="margin-top:8px;font-size:10px;color:#555;text-align:center;">
-                            {{ $imagem->descricao }}
-                        </div>
-                        @endif
-                    </div>
-                </td>
-
-                @php
-                $contador++;
-                @endphp
-
-                @if($contador % 2 == 0)
-
-            </tr>
-            <tr>
-                @endif
-                @endforeach
-                @endif
-                @endforeach
-            </tr>
-        </table>
-    </div>
-
-    @endif
-    @endforeach
-    @endforeach
-
 
     <!-- ================================================= -->
     <!-- OBSERVAÇÕES -->

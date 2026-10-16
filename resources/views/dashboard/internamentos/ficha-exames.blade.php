@@ -301,24 +301,13 @@
         <table>
             <thead>
                 <tr style="background:#0B6FA4;color:white;">
-                    <th width="7%">
-                        #
-                    </th>
-                    <th width="38%">
-                        Exame
-                    </th>
-                    <th width="20%">
-                        Categoria
-                    </th>
-                    <th width="15%">
-                        Quantidade
-                    </th>
-                    <th width="20%">
-                        Valor
-                    </th>
+                    <th width="7%"> #</th>
+                    <th width="38%"> Exame</th>
+                    <th width="20%"> Categoria</th>
+                    <th width="15%"> Quantidade</th>
+                    <th width="20%"> Valor</th>
                 </tr>
             </thead>
-
             <tbody>
                 @php
                 $total = 0;
@@ -408,7 +397,8 @@
 
             @foreach($parametro->resultadosubparamentros as $resultado)
 
-            @if( $resultado->subparametroexame->tipo=="lista" || $resultado->subparametroexame->tipo=="numero" || $resultado->subparametroexame->tipo=="texto" || $resultado->subparametroexame->tipo=="textarea" || $resultado->subparametroexame->tipo=="booleano" || $resultado->subparametroexame->tipo=="data")
+            @if(($resultado->subparametroexame->tipo=="lista" || $resultado->subparametroexame->tipo=="numero" || $resultado->subparametroexame->tipo=="texto" || $resultado->subparametroexame->tipo=="textarea" || $resultado->subparametroexame->tipo=="booleano" || $resultado->subparametroexame->tipo=="data"))
+            @if ($resultado->valor != NULL || $resultado->valor != NULL)
             <tr>
                 <td style="border:1px solid #DDD;">
                     {{ $resultado->subparametroexame->codigo ?? "-" }}
@@ -434,6 +424,7 @@
                     {{ $resultado->subparametroexame->valor_referencia }}
                 </td>
             </tr>
+            @endif
             @endif
             @endforeach
         </table>

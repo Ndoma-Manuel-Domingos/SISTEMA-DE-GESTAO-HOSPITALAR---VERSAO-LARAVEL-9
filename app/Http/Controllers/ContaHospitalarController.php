@@ -877,6 +877,7 @@ class ContaHospitalarController extends Controller
 
     public function pagarItem(Request $request)
     {
+
         $validated = $request->validate([
             'itens_pagamento' => ['required', 'string'],
             'forma_pagamento' => ['required', 'string', 'max:50'],

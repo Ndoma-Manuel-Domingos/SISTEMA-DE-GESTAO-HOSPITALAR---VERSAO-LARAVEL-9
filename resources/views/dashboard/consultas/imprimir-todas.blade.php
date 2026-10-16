@@ -29,7 +29,7 @@
         </td>
         <td>{{ $item->status ?? "N/A" }}</td>
         <td>{{ $item->hora_consulta }}</td>
-        <td>{{ $item->data_consulta }}</td>
+        <td>{{ $item->data_consulta->format("d/m/Y") }}</td>
     </tr>
     @endforeach
 

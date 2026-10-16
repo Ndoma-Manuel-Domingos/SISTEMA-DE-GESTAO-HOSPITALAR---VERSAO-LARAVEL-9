@@ -40,7 +40,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerificarCaixaAberto::class,
             \App\Http\Middleware\FirstLoginSystem::class,
             \App\Http\Middleware\SetLocale::class,
-            \App\Http\Middleware\EnsureLicenseActive::class,
+            //\App\Http\Middleware\EnsureLicenseActive::class,
             // \App\Http\Middleware\AfterLogin::class,
             // \App\Http\Middleware\HashLicence::class,
             // \App\Http\Middleware\CheckSystemLock::class,

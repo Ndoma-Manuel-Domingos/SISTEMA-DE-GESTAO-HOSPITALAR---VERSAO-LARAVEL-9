@@ -98,7 +98,7 @@
                                 @if (Auth::user()->can('monitoramento consultorio') || Auth::user()->can('consultorio'))
                                 <button type="submit" class="btn btn-light-primary">{{ __('messages.salvar') }}</button>
                                 @endif
-                                <button type="reset" class="btn btn-light-danger">{{ __('messages.cancelar') }} </button>
+                                <a href="{{ route('consultorio.index') }}" class="btn btn-light-danger">{{ __('messages.cancelar') }} </a>
                             </div>
 
                         </div>
@@ -140,6 +140,8 @@
 @section('scripts')
 <script>
     let total_exames_preco = 0;
+    
+    const routes = { ficha: "{{ route('pdf.solicitacoes-medicas-individual', ':id') }}" };
 
     $('#produto_id').on('change', function() {
         const item_id = $(this).val();
@@ -235,53 +237,157 @@
         });
     });
 
-    $(document).ready(function() {
-        $('form').on('submit', function(e) {
-            e.preventDefault(); // Impede o envio tradicional do formulário
-
-            let paciente_id = $('#paciente_id').val();
+    $(document).ready(function () {
+        $('form').on('submit', function (e) {
+            e.preventDefault();
 
             let form = $(this);
-            let formData = form.serialize(); // Serializa os dados do formulário
+            let formData = form.serialize();
 
             $.ajax({
-                url: form.attr('action'), // URL do endpoint no backend
-                method: form.attr('method'), // Método HTTP definido no formulário
-                data: formData, // Dados do formulário
+                url: form.attr('action'),
+                method: form.attr('method'),
+                data: formData,
                 headers: {
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content")
-                }
-                , beforeSend: function() {
-                    // Você pode adicionar um loader aqui, se necessário
+                },
+
+                beforeSend: function () {
                     progressBeforeSend();
-                }
-                , success: function(response) {
-                    // Feche o alerta de carregamento
-                    Swal.close();
-                    showMessage('Sucesso!', response.message, 'success');
+                },
 
-                    window.location.href = "/consultor/consultorio";
-
-                }
-                , error: function(xhr) {
-                    // Feche o alerta de carregamento
+                success: function (response) {
                     Swal.close();
 
-                    // Trata erros e exibe mensagens para o usuário
+                    let url_ficha = routes.ficha.replace(':id', response.solicitacao.id);
+
+                    Swal.fire({
+                        title: 'Salvo com sucesso!',
+                        text: response.message + ' O que deseja fazer agora?',
+                        icon: 'success',
+                        showDenyButton: true,
+                        showCancelButton: true,
+                        confirmButtonText: 'Imprimir pedidos',
+                        denyButtonText: 'Voltar ao consultório médico',
+                        cancelButtonText: 'Fazer outra solicitações',
+                        confirmButtonColor: '#198754',
+                        denyButtonColor: '#0d6efd',
+                        cancelButtonColor: '#6c757d',
+                        allowOutsideClick: false
+                    }).then((result) => {
+
+                        if (result.isConfirmed) {
+                            // Imprimir pedidos
+                            window.open(url_ficha, '_blank', 'noopener,noreferrer');
+
+                        } else if (result.isDenied) {
+                            // Voltar ao consultório médico
+                            window.location.href = "/consultor/consultorio";
+
+                        } else if (result.dismiss === Swal.DismissReason.cancel) {
+                            // Cancelar: permanece na página
+                            Swal.close();
+                        }
+
+                    });
+                },
+
+                error: function (xhr) {
+                    Swal.close();
+
                     if (xhr.status === 422) {
                         let errors = xhr.responseJSON.errors;
                         let messages = '';
-                        $.each(errors, function(key, value) {
-                            messages += `${value}\n *`; // Exibe os erros
+
+                        $.each(errors, function (key, value) {
+                            messages += value.join('\n') + '\n';
                         });
 
-                        showMessage('Erro de Validação!', messages, 'error');
+                        showMessage(
+                            'Erro de Validação!',
+                            messages,
+                            'error'
+                        );
+
                     } else {
-                        showMessage('Erro!', xhr.responseJSON.message, 'error');
+                        showMessage(
+                            'Erro!',
+                            xhr.responseJSON?.message || 'Ocorreu um erro ao salvar.',
+                            'error'
+                        );
                     }
                 }
-            , });
+            });
         });
+    });
+
+    $(document).ready(function () {
+
+        $('#tipo').on('change', function () {
+            let tipo = $(this).val();
+            let produtoSelect = $('#produto_id');
+
+            // Limpar os produtos anteriores
+            produtoSelect.empty();
+
+            if (!tipo) {
+                produtoSelect.append(
+                    new Option('Selecione primeiro o tipo', '')
+                );
+
+                produtoSelect.prop('disabled', true);
+                produtoSelect.trigger('change');
+                return;
+            }
+
+            produtoSelect.prop('disabled', true);
+            produtoSelect.append(
+                new Option('A carregar produtos...', '')
+            );
+            produtoSelect.trigger('change');
+
+            $.ajax({
+                url: '/produtos-por-tipo/' + encodeURIComponent(tipo),
+                type: 'GET',
+                dataType: 'json',
+
+                success: function (produtos) {
+                    produtoSelect.empty();
+
+                    produtoSelect.append(
+                        new Option('Escolha um produto', '')
+                    );
+
+                    if (produtos.length > 0) {
+                        $.each(produtos, function (index, produto) {
+                            produtoSelect.append(
+                                new Option(produto.nome, produto.id)
+                            );
+                        });
+
+                        produtoSelect.prop('disabled', false);
+                    } else {
+                        produtoSelect.append(
+                            new Option('Nenhum produto encontrado', '')
+                        );
+                    }
+
+                    produtoSelect.trigger('change');
+                },
+
+                error: function () {
+                    produtoSelect.empty();
+
+                    produtoSelect.append(
+                        new Option('Erro ao carregar produtos', '')
+                    );
+
+                    produtoSelect.prop('disabled', true);
+                    produtoSelect.trigger('change');
+                }
+            });
+        });
+
     });
 
 </script>

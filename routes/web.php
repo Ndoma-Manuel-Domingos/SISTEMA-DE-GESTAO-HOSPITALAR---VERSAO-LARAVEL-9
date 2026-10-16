@@ -125,6 +125,7 @@ use App\Http\Controllers\PosController;
 use App\Http\Controllers\RequisacaoController;
 use App\Http\Controllers\ScreenLockController;
 use App\Http\Controllers\SegurancaController;
+use App\Http\Controllers\MedicalCommissionController;
 use App\Http\Controllers\UserController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -193,8 +194,8 @@ Route::post('/configuracao', [BackupController::class, 'configuracao_store'])->n
 
 Route::group(["middleware" => [
     'auth',
-    // 'check.pin.active',
-    // 'check.licenca.active',
+    'check.pin.active',
+    'check.licenca.active',
     'check.inactivity'
 ]], function () {
 

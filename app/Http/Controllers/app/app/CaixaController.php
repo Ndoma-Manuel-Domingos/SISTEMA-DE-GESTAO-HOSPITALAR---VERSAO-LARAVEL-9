@@ -183,7 +183,6 @@ class CaixaController extends Controller
 
     public function monitoramentoCaixa()
     {
-
         $user = auth()->user();
 
         if (!$user->can('abertura do caixa')) {

@@ -25,285 +25,279 @@
     <div class="content">
         <div class="container-fluid">
 
-            {{-- <div class="row">
-                <div class="col-lg-8">
-                    <div class="card shadow">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">Atendimento Médico</h5>
+        {{-- <div class="row">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Atendimento Médico</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Queixa Médica</label>
+                            <textarea id="queixa" class="form-control" rows="7" placeholder="A transcrição aparecerá aqui automaticamente..." autofocus></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Observações Médicas</label>
+                            <textarea id="observacao_medica" class="form-control" rows="5" placeholder="Notas do médico..."></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Resumo Clínico</label>
+                            <textarea class="form-control" rows="12" readonly id="resumo_clinico">{{ $origem->consultas[0]->resumo_clinico }}</textarea>
+                            </div>
+
+                        </div>
+                    </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card shadow">
+                            <div class="card-header bg-dark text-white">
+                                Painel da Consulta
+                            </div>
+                            <div class="card-body">
+                                <button id="btnGravar" class="btn btn-light-success w-100 mb-2">
+                                    🎤 Iniciar Atendimento
+                                </button>
+                                <button id="btnParar" class="btn btn-light-danger w-100" disabled>
+                                    ⛔ Encerrar Atendimento
+                                </button>
+                                <hr>
+                                <div class="mb-3">
+                                    <small class="text-muted">Estado</small>
+                                    <div id="estado">
+                                        Aguardando...
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Cronómetro</small>
+                                    <div id="cronometro">
+                                        00:00:00
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Microfone</small>
+                                    <div id="microfone">
+                                        🔴 Desligado
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Sincronização</small>
+                                    <div id="sync">
+                                        Não iniciado
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <small class="text-muted">Internet</small>
+                                    <div id="internet">
+                                        🟢 Online
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <small class="text-muted">Segmentos Gravados</small>
+                                    <div id="segmentos">
+                                        0
+                                    </div>
+                                </div>
+
+                                <div class="progress mt-4">
+                                    <div id="uploadProgress" class="progress-bar bg-success" style="width:0%">
+                                        0%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+        --}}
+
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <form action="{{ route('consultorio.store') }}" method="post" enctype="multipart/form-data">
+                    @csrf
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-tools">
+                                @if (Auth::user()->can('adicionar item conta hospitalar'))
+                                <a href="{{ route('atendimentos.show', $origem->id) }}" class="btn btn-light-primary">Actualizar conta Hospitalar do paciente</a>
+                                @endif
+                            </div>
                         </div>
                         <div class="card-body">
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Queixa Médica</label>
-                                <textarea id="queixa" class="form-control" rows="7" placeholder="A transcrição aparecerá aqui automaticamente..." autofocus></textarea>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Observações Médicas</label>
-                                <textarea id="observacao_medica" class="form-control" rows="5" placeholder="Notas do médico..."></textarea>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">Resumo Clínico</label>
-                                <textarea class="form-control" rows="12" readonly id="resumo_clinico">{{ $origem->consultas[0]->resumo_clinico }}</textarea>
-        </div>
-
-    </div>
-</div>
-</div>
-<div class="col-lg-4">
-    <div class="card shadow">
-        <div class="card-header bg-dark text-white">
-            Painel da Consulta
-        </div>
-        <div class="card-body">
-            <button id="btnGravar" class="btn btn-light-success w-100 mb-2">
-                🎤 Iniciar Atendimento
-            </button>
-            <button id="btnParar" class="btn btn-light-danger w-100" disabled>
-                ⛔ Encerrar Atendimento
-            </button>
-            <hr>
-            <div class="mb-3">
-                <small class="text-muted">Estado</small>
-                <div id="estado">
-                    Aguardando...
-                </div>
-            </div>
-            <div class="mb-3">
-                <small class="text-muted">Cronómetro</small>
-                <div id="cronometro">
-                    00:00:00
-                </div>
-            </div>
-            <div class="mb-3">
-                <small class="text-muted">Microfone</small>
-                <div id="microfone">
-                    🔴 Desligado
-                </div>
-            </div>
-            <div class="mb-3">
-                <small class="text-muted">Sincronização</small>
-                <div id="sync">
-                    Não iniciado
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <small class="text-muted">Internet</small>
-                <div id="internet">
-                    🟢 Online
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <small class="text-muted">Segmentos Gravados</small>
-                <div id="segmentos">
-                    0
-                </div>
-            </div>
-
-            <div class="progress mt-4">
-                <div id="uploadProgress" class="progress-bar bg-success" style="width:0%">
-                    0%
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-</div> --}}
-
-<div class="row">
-    <div class="col-12 col-md-6">
-        <form action="{{ route('consultorio.store') }}" method="post" enctype="multipart/form-data">
-            @csrf
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-tools">
-                        @if (Auth::user()->can('adicionar item conta hospitalar'))
-                        <a href="{{ route('atendimentos.show', $origem->id) }}" class="btn btn-light-primary">Actualizar conta Hospitalar do paciente</a>
-                        @endif
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-12 col-md-6">
-                            <label for="queixa_principal" class="form-label">Queixa principal</label>
-                            <div class="input-group mb-3">
-                                <textarea name="queixa_principal" class="form-control" id="queixa_principal" cols="30" rows="2" placeholder="Início da consulta" autofocus>
-                                {{ $origem->triagem ? $origem->triagem->queixa_principal : '' }}
-                                </textarea>
-                            </div>
-                        </div>
-
-                        <input type="hidden" name="cliente_id" value="{{ $origem->cliente_id }}">
-
-                        <div class="col-12 col-md-6">
-                            <label for="historia_doenca_actual" class="form-label">História da doença atual</label>
-                            <div class="input-group mb-3">
-                                <textarea name="historia_doenca_actual" class="form-control" id="historia_doenca_actual" cols="30" rows="2" placeholder="Após ouvir a queixa">{{ $origem->consultas[0]->historia_doenca_actual ?? "" }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="historico_medico" class="form-label">Histórico médico</label>
-                            <div class="input-group mb-3">
-                                <textarea name="historico_medico" class="form-control" id="historico_medico" cols="30" rows="2" placeholder="Após entender os sintomas">{{ $origem->consultas[0]->historico_medico ?? "" }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="exame_medico" class="form-label">Exame físico</label>
-                            <div class="input-group mb-3">
-                                <textarea name="exame_medico" class="form-control" id="exame_medico" cols="30" rows="2" placeholder="Durante a consulta">{{ $origem->consultas[0]->exame_medico ?? "" }}</textarea>
-                            </div>
-                        </div>
-
-                        {{-- <input type="hidden" id="consulta_id" value="{{ $consulta->id }}"> --}}
-                        <input type="hidden" id="consulta_id" value="{{$origem->consultas[0]->id}}">
-
-                        <input type="hidden" name="request_ordem" value="{{ $request_ordem ?? '' }}">
-                        <input type="hidden" name="origem_id" value="{{ $origem ? $origem->id : '' }}">
-
-                        <div class="col-12 col-md-6">
-                            <label for="alergias_conhecidas" class="form-label">Alergias conhecidas</label>
-                            <div class="input-group mb-3">
-                                <textarea name="alergias_conhecidas" class="form-control" id="alergias_conhecidas" cols="30" rows="2" placeholder="Em qualquer ponto">{{ $origem->consultas[0]->alergias_conhecidas ?? "" }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="anotacoes_gerais" class="form-label">Anotações gerais</label>
-                            <div class="input-group mb-3">
-                                <textarea name="anotacoes_gerais" class="form-control" id="anotacoes_gerais" cols="30" rows="2" placeholder="Durante ou ao final">{{ $origem->consultas[0]->anotacoes_gerais ?? "" }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="avaliado" class="form-label">O que foi avaliado</label>
-                            <div class="input-group mb-3">
-                                <textarea name="avaliado" class="form-control" id="avaliado" cols="30" rows="2" placeholder="O que foi avaliado no final da consulta">{{ $origem->consultas[0]->avaliado ?? "" }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="diagnosticado" class="form-label">O que foi diagnosticado</label>
-                            <div class="input-group mb-3">
-                                <textarea name="diagnosticado" class="form-control" id="diagnosticado" cols="30" rows="2" placeholder="O que foi diagnosticado no final da consulta">{{ $origem->consultas[0]->diagnosticado ?? "" }}</textarea>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="cids_id" class="form-label">CIDS</label>
-                            <div class="input-group mb-3">
-                                <select type="text" class="form-control select2" name="cids_id" id="cids_id">
-                                    <option value="">{{ __('messages.escolher') }} </option>
-                                    @foreach ($cids as $item)
-                                    <option value="{{ $item->id ?? "" }}" {{ $item->id == ($origem->consultas[0]->cids_id ?? "") }}>{{ $item->sigla }} - {{ $item->nome ?? "N/A" }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                            <label for="tipo_atendimento_id" class="form-label">Tipo Atendimento (Destino)</label>
-                            <div class="input-group mb-3">
-                                <select type="text" class="form-control select2" name="tipo_atendimento_id" id="tipo_atendimento_id">
-                                    <option value="">{{ __('messages.escolher') }} </option>
-                                    @foreach ($tipos_atendimentos as $item)
-                                    <option value="{{ $item->id ?? "" }}">{{ $item->nome ?? "N/A" }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="row">
-                        <div class="col-12 col-md-12 bg-light-primary my-3">
-                            <h3 class="h4 p-2">Campos adicionais</h3>
-                        </div>
-                        @if ($origem->consultas && count($origem->consultas) != 0)
-                        @foreach ($origem->consultas[0]->items as $item)
-                        @foreach ($item->paramentos_consultas as $param_consulta)
-                        @if ($param_consulta->paramentro->tipo !== "imagem")
-                        <div class="col-12 col-md-6">
-                            <label class="form-label">{{ $param_consulta->paramentro->nome ?? '' }}</label>
-                            <div class="input-group mb-3">
-                                @if ($param_consulta->paramentro->tipo === "textarea" || $param_consulta->paramentro->tipo === "texto")
-                                <textarea name="campos[{{ $param_consulta->id }}]" class="form-control" rows="1" placeholder="{{ $param_consulta->paramentro->nome ?? '' }}">{{ $param_consulta->valor ?? '' }}</textarea>
-                                @endif
-
-                                @if ($param_consulta->paramentro->tipo == "lista")
-                                <select name="campos[{{ $param_consulta->id }}]" class="form-control">
-                                    @foreach (json_decode($param_consulta->paramentro->opcoes, true) as $key => $op)
-                                    <option value="{{ $key }}" {{ $param_consulta->valor == $key ? 'selected' : '' }}>{{ $op }}</option>
-                                    @endforeach
-                                </select>
-                                @endif
-
-                                @if ($param_consulta->paramentro->tipo === "booleano")
-                                <select name="campos[{{ $param_consulta->id }}]" class="form-control">
-                                    <option value="{{ $param_consulta->paramentro->texto_sim }}" {{ $param_consulta->valor == $param_consulta->paramentro->texto_sim ? 'selected' : '' }}>Sim</option>
-                                    <option value="{{ $param_consulta->paramentro->texto_nao }}" {{ $param_consulta->valor == $param_consulta->paramentro->texto_nao ? 'selected' : '' }}>Não</option>
-                                </select>
-                                @endif
-
-                                @if ($param_consulta->paramentro->tipo === "numero")
-                                <input type="text" name="campos[{{ $param_consulta->id }}]" value="{{ $param_consulta->valor ?? '' }}" class="form-control" placeholder="{{ $param_consulta->paramentro->nome ?? '' }}">
-                                @endif
-                            </div>
-                        </div>
-                        @endif
-                        @endforeach
-
-                        @foreach ($item->paramentos_consultas_imagem as $param_consulta_imagem)
-                        <div class="col-12 col-md-12">
-                            <label for="diagnosticado" class="form-label">{{ $param_consulta_imagem->paramentro->nome ?? '' }}</label>
-                            <div class="input-group mb-3">
-                                <input type="file" multiple name="imagens[{{ $param_consulta_imagem->id }}][]" class="form-control">
-                            </div>
-                            @php
-                            $ficheiros = json_decode($param_consulta_imagem->ficheiro, true) ?? [];
-                            @endphp
-                            @if(count($ficheiros))
                             <div class="row">
-                                @foreach($ficheiros as $ficheiro)
-                                <div class="col-md-2 mb-3">
-                                    <a href="{{ asset($ficheiro) }}" target="_blank">
-                                        <img src="{{ asset($ficheiro) }}" class="img-fluid rounded border" style="height:120px;width:100%;object-fit:cover;">
-                                    </a>
+                                <div class="col-12 col-md-6">
+                                    <label for="queixa_principal" class="form-label">Queixa principal</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="queixa_principal" class="form-control" id="queixa_principal" cols="30" rows="2" placeholder="Início da consulta" autofocus>{{ trim($origem->consultas[0]->queixa_principal ?? ($origem->triagem ? $origem->triagem->queixa_principal : '')) }}</textarea>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="cliente_id" value="{{ $origem->cliente_id }}">
+                                <div class="col-12 col-md-6">
+                                    <label for="historia_doenca_actual" class="form-label">História da doença atual</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="historia_doenca_actual" class="form-control" id="historia_doenca_actual" cols="30" rows="2" placeholder="Após ouvir a queixa">{{ $origem->consultas[0]->historia_doenca_actual ?? "" }}</textarea>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="historico_medico" class="form-label">Histórico médico</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="historico_medico" class="form-control" id="historico_medico" cols="30" rows="2" placeholder="Após entender os sintomas">{{ $origem->consultas[0]->historico_medico ?? "" }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="exame_medico" class="form-label">Exame físico</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="exame_medico" class="form-control" id="exame_medico" cols="30" rows="2" placeholder="Durante a consulta">{{ $origem->consultas[0]->exame_medico ?? "" }}</textarea>
+                                    </div>
+                                </div>
+
+                                {{-- <input type="hidden" id="consulta_id" value="{{ $consulta->id }}"> --}}
+                                <input type="hidden" id="consulta_id" value="{{$origem->consultas[0]->id}}">
+
+                                <input type="hidden" name="request_ordem" value="{{ $request_ordem ?? '' }}">
+                                <input type="hidden" name="origem_id" value="{{ $origem ? $origem->id : '' }}">
+
+                                <div class="col-12 col-md-6">
+                                    <label for="alergias_conhecidas" class="form-label">Alergias conhecidas</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="alergias_conhecidas" class="form-control" id="alergias_conhecidas" cols="30" rows="2" placeholder="Em qualquer ponto">{{ $origem->consultas[0]->alergias_conhecidas ?? "" }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="anotacoes_gerais" class="form-label">Anotações gerais</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="anotacoes_gerais" class="form-control" id="anotacoes_gerais" cols="30" rows="2" placeholder="Durante ou ao final">{{ $origem->consultas[0]->anotacoes_gerais ?? "" }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="avaliado" class="form-label">O que foi avaliado</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="avaliado" class="form-control" id="avaliado" cols="30" rows="2" placeholder="O que foi avaliado no final da consulta">{{ $origem->consultas[0]->avaliado ?? "" }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="diagnosticado" class="form-label">O que foi diagnosticado</label>
+                                    <div class="input-group mb-3">
+                                        <textarea name="diagnosticado" class="form-control" id="diagnosticado" cols="30" rows="2" placeholder="O que foi diagnosticado no final da consulta">{{ $origem->consultas[0]->diagnosticado ?? "" }}</textarea>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="cids_id" class="form-label">CIDS</label>
+                                    <div class="input-group mb-3">
+                                        <select type="text" class="form-control select2" name="cids_id" id="cids_id">
+                                            <option value="">{{ __('messages.escolher') }} </option>
+                                            @foreach ($cids as $item)
+                                            <option value="{{ $item->id ?? "" }}" {{ $item->id == ($origem->consultas[0]->cids_id ?? "") }}>{{ $item->sigla }} - {{ $item->nome ?? "N/A" }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 col-md-6">
+                                    <label for="tipo_atendimento_id" class="form-label">Tipo Atendimento (Destino)</label>
+                                    <div class="input-group mb-3">
+                                        <select type="text" class="form-control select2" name="tipo_atendimento_id" id="tipo_atendimento_id">
+                                            <option value="">{{ __('messages.escolher') }} </option>
+                                            @foreach ($tipos_atendimentos as $item)
+                                            <option value="{{ $item->id ?? "" }}">{{ $item->nome ?? "N/A" }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="row">
+                                <div class="col-12 col-md-12 bg-light-primary my-3">
+                                    <h3 class="h4 p-2">Campos adicionais</h3>
+                                </div>
+                                @if ($origem->consultas && count($origem->consultas) != 0)
+                                @foreach ($origem->consultas[0]->items as $item)
+                                @foreach ($item->paramentos_consultas as $param_consulta)
+                                @if ($param_consulta->paramentro->tipo !== "imagem")
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label">{{ $param_consulta->paramentro->nome ?? '' }}</label>
+                                    <div class="input-group mb-3">
+                                        @if ($param_consulta->paramentro->tipo === "textarea" || $param_consulta->paramentro->tipo === "texto")
+                                        <textarea name="campos[{{ $param_consulta->id }}]" class="form-control" rows="1" placeholder="{{ $param_consulta->paramentro->nome ?? '' }}">{{ $param_consulta->valor ?? '' }}</textarea>
+                                        @endif
+
+                                        @if ($param_consulta->paramentro->tipo == "lista")
+                                        <select name="campos[{{ $param_consulta->id }}]" class="form-control">
+                                            @foreach (json_decode($param_consulta->paramentro->opcoes, true) as $key => $op)
+                                            <option value="{{ $key }}" {{ $param_consulta->valor == $key ? 'selected' : '' }}>{{ $op }}</option>
+                                            @endforeach
+                                        </select>
+                                        @endif
+
+                                        @if ($param_consulta->paramentro->tipo === "booleano")
+                                        <select name="campos[{{ $param_consulta->id }}]" class="form-control">
+                                            <option value="{{ $param_consulta->paramentro->texto_sim }}" {{ $param_consulta->valor == $param_consulta->paramentro->texto_sim ? 'selected' : '' }}>Sim</option>
+                                            <option value="{{ $param_consulta->paramentro->texto_nao }}" {{ $param_consulta->valor == $param_consulta->paramentro->texto_nao ? 'selected' : '' }}>Não</option>
+                                        </select>
+                                        @endif
+
+                                        @if ($param_consulta->paramentro->tipo === "numero")
+                                        <input type="text" name="campos[{{ $param_consulta->id }}]" value="{{ $param_consulta->valor ?? '' }}" class="form-control" placeholder="{{ $param_consulta->paramentro->nome ?? '' }}">
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+                                @endforeach
+
+                                @foreach ($item->paramentos_consultas_imagem as $param_consulta_imagem)
+                                <div class="col-12 col-md-12">
+                                    <label for="diagnosticado" class="form-label">{{ $param_consulta_imagem->paramentro->nome ?? '' }}</label>
+                                    <div class="input-group mb-3">
+                                        <input type="file" multiple name="imagens[{{ $param_consulta_imagem->id }}][]" class="form-control">
+                                    </div>
+                                    @php
+                                    $ficheiros = json_decode($param_consulta_imagem->ficheiro, true) ?? [];
+                                    @endphp
+                                    @if(count($ficheiros))
+                                    <div class="row">
+                                        @foreach($ficheiros as $ficheiro)
+                                        <div class="col-md-2 mb-3">
+                                            <a href="{{ asset($ficheiro) }}" target="_blank">
+                                                <img src="{{ asset($ficheiro) }}" class="img-fluid rounded border" style="height:120px;width:100%;object-fit:cover;">
+                                            </a>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    @endif
                                 </div>
                                 @endforeach
+                                @endforeach
+
+                                @endif
                             </div>
+
+                        </div>
+                        <div class="card-footer d-flex">
+                            @if (Auth::user()->can('consultorio'))
+                            <button type="submit" class="btn btn-light-success">{{ __('messages.salvar') }}</button>
                             @endif
                         </div>
-                        @endforeach
-                        @endforeach
-
-                        @endif
                     </div>
-
-                </div>
-                <div class="card-footer d-flex">
-                    @if (Auth::user()->can('consultorio'))
-                    <button type="submit" class="btn btn-light-success">{{ __('messages.salvar') }}</button>
-                    @endif
+                </form>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Dados da Triagem</h5>
+                    </div>
+                    @include('dashboard.atendimentos._views.card-triagem-visualizacao')
+                    <div class="card-footer"></div>
                 </div>
             </div>
-        </form>
-    </div>
-    <div class="col-12 col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Dados da Triagem</h5>
-            </div>
-
-            @include('dashboard.atendimentos._views.card-triagem-visualizacao')
-
-            <div class="card-footer"></div>
         </div>
-    </div>
-</div>
 <!-- /.row -->
 </div><!-- /.container-fluid -->
 </div>

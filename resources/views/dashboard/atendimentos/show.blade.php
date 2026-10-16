@@ -67,6 +67,11 @@
 
             @if($atendimento->contaHospitalar)
             <div class="row">
+
+                <div class="col-12 col-md-12">
+                    <a href="{{ route('caixas.monitoramento-caixas') }}" class="btn btn-light-primary d-block mb-3">Monitoramento do caixa</a>
+                </div>
+
                 <div class="col-md-9">
                     <div class="card">
                         <div class="card-header bg-dark">
@@ -127,9 +132,11 @@
                                         <td class="text-right">{{ number_format($item->percentual_cobertura??0,2) }}</td>
                                         <td class="text-right">{{ number_format($item->subtotal??0,2) }}</td>
                                         <td>
+                                            @if(!$item->estado_pagamento)
                                             <button class="btn btn-light-danger btn-sm btn-remover-item" data-id="{{ $item->id ?? "N/A" }}">
                                                 Remover
                                             </button>
+                                            @endif
                                         </td>
                                     </tr>
                                     @endforeach
@@ -209,7 +216,6 @@
                 </div>
             </div>
             @endif
-
 
             <div class="row">
                 <div class="col-12 col-md-12">
@@ -1237,6 +1243,8 @@
                 window.open(url1, '_blank');
             }
             , error: function(xhr) {
+                console.log(xhr)
+
                 let mensagem = 'Não foi possível processar o pagamento.';
                 if (xhr.status === 422 && xhr.responseJSON.errors) {
                     let erros = [];

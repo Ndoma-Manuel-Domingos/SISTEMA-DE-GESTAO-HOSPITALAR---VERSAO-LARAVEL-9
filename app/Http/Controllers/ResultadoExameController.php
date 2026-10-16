@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Medico;
 use App\Models\ResultadoExame;
 use App\Models\ResultadoExameSubParamentro;
 use App\Models\ResultadoExameSubParamentroImagem;
@@ -34,7 +35,7 @@ class ResultadoExameController extends Controller
 
         $entidade = User::with(["empresa"])->findOrFail(Auth::user()->id);
 
-        $resultados = ResultadoExame::query()
+        $query = ResultadoExame::query()
             ->when($request->paciente_id, function ($query, $value) {
                 $query->whereHas('exame', function ($q) use ($value) {
                     $q->where('paciente_id', $value);
@@ -48,8 +49,18 @@ class ResultadoExameController extends Controller
             })
             ->when($request->data_final, function ($query, $value) {
                 $query->whereDate('data_realizacao', '<=', $value);
-            })
-            ->with(['exame.paciente'])
+            });
+
+                // Se for médico, mostrar apenas as consultas dele.
+        // O administrador continua a visualizar todas as consultas.
+        if ($user->can('consultorio') && $user->can('monitoramento consultorio')) {
+            $medico = Medico::where('gestor_conta', $user->id)->first();
+            if ($medico && $user->is_admin == false) {
+                $query->where('medico_id', $medico->id);
+            }
+        }
+
+        $resultados = $query->with(['exame.paciente'])
             ->where('entidade_id', $entidade->entidade_id)
             ->orderByDesc('id')
             ->get();
